@@ -71,10 +71,19 @@ void RenderArea::paintEvent(QPaintEvent *event)
 
         QPoint pixel;
         pixel.setX(fpoint.x() * scale + center.x() );
-        pixel.setX(fpoint.y() * scale + center.y() );
+        pixel.setY(fpoint.y() * scale + center.y() );
 
         painter.drawPoint(pixel);
     }
     //painter.drawLine(this->rect().topLeft(), this->rect().bottomRight() );
 
 }
+
+
+
+
+
+
+
+
+
