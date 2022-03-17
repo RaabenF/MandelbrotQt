@@ -61,8 +61,8 @@ void RenderArea::paintEvent(QPaintEvent *event)
     painter.drawRect(this->rect() );
 
     QPoint center = this->rect().center();
-    int stepCount = 64;
-    float scale = 40;
+    int stepCount = 256;
+    float scale = 80;
 
     float intervalLength = 2 * M_PI;
     float step = intervalLength / stepCount;
