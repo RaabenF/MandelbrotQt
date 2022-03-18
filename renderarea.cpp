@@ -129,16 +129,22 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
     painter.drawRect(this->rect() );
     QPoint center = this->rect().center();
 
+    QPointF prevPixel = compute(-mIntervalLength) * mScale + center;
+
     float step = mIntervalLength / mStepCount;
     for (float t=-mIntervalLength; t < mIntervalLength; t += step){
 
-        QPointF fpoint = compute(t);
-        //konvertiere Float2D zu Int(Pixel)2D
-        QPoint pixel;
-        pixel.setX(fpoint.x() * mScale + center.x() );
-        pixel.setY(fpoint.y() * mScale + center.y() );
+        QPointF fpoint = compute(t) * mScale + center;
 
-        painter.drawPoint(pixel);
+        //konvertiere Float2D zu Int(Pixel)2D, unnötig
+//        QPoint pixel;
+//        pixel.setX(fpoint.x() * mScale + center.x() );
+//        pixel.setY(fpoint.y() * mScale + center.y() );
+//        painter.drawPoint(pixel);
+
+        painter.drawLine(fpoint, prevPixel);
+        prevPixel = fpoint;
+
     }
     //painter.drawLine(this->rect().topLeft(), this->rect().bottomRight() );
 
