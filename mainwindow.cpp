@@ -43,5 +43,9 @@ void MainWindow::on_btnLine_clicked()
     this->ui->renderArea->repaint();
 }
 
-
+void MainWindow::on_option1_clicked(bool checked)
+{
+    this->ui->renderArea->option1 = checked;
+    this->ui->renderArea->repaint();
+}
 

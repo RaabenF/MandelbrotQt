@@ -20,6 +20,8 @@ public:
     void setShape (ShapeType shape) { mShape = shape; on_shape_changed(); }
     ShapeType shape() const { return mShape; }
 
+    bool option1=true;
+
 protected:
     void paintEvent(QPaintEvent *event) override;
 

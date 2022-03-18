@@ -28,6 +28,8 @@ private slots:
 
     void on_btnLine_clicked();
 
+    void on_option1_clicked(bool checked);
+
 private:
     //Ui::MainWindow *ui;   //ist gleich:
     Ui_MainWindow *ui;

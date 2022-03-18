@@ -127,9 +127,9 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
 
     //drawing area
     painter.drawRect(this->rect() );
-    QPoint center = this->rect().center();
-
-    QPointF prevPixel = compute(-mIntervalLength) * mScale + center;
+    QPointF center = this->rect().center();     // war im tut kein floatP, ist aber egal, konvertierung erfolgt auch automatisch
+    QPointF start = center;
+    QPointF fprevPixel = compute(-mIntervalLength) * mScale + center;
 
     float step = mIntervalLength / mStepCount;
     for (float t=-mIntervalLength; t < mIntervalLength; t += step){
@@ -142,8 +142,9 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
 //        pixel.setY(fpoint.y() * mScale + center.y() );
 //        painter.drawPoint(pixel);
 
-        painter.drawLine(fpoint, prevPixel);
-        prevPixel = fpoint;
+        if(option1)painter.drawLine(fpoint, start);        //das war zuerst ein Fehler im Tut, als prevPixel gefehlt hat, grad übernommen
+        painter.drawLine(fpoint, fprevPixel);
+        fprevPixel = fpoint;
 
     }
     //painter.drawLine(this->rect().topLeft(), this->rect().bottomRight() );
