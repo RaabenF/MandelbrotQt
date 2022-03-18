@@ -142,7 +142,7 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
 //        pixel.setY(fpoint.y() * mScale + center.y() );
 //        painter.drawPoint(pixel);
 
-        if(option1)painter.drawLine(fpoint, start);        //das war zuerst ein Fehler im Tut, als prevPixel gefehlt hat, grad übernommen
+        if(optionCool)painter.drawLine(fpoint, start);        //das war zuerst ein Fehler im Tut, als prevPixel gefehlt hat, grad übernommen
         painter.drawLine(fpoint, fprevPixel);
         fprevPixel = fpoint;
 

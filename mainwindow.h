@@ -30,8 +30,12 @@ private slots:
 
     void on_option1_clicked(bool checked);
 
+    void on_spinScale_valueChanged(double arg1);
+
 private:
     //Ui::MainWindow *ui;   //ist gleich:
     Ui_MainWindow *ui;
+
+    void setScaleSpinner();
 };
 #endif // MAINWINDOW_H

@@ -14,13 +14,17 @@ public:
 
     enum ShapeType { Astroid, Cycloid, HuygensCycloid, HypoCycloid, Line };
 
-    void setBackgroundcolor(QColor bgColor) {mBackgroundColor = bgColor; }  //setter, inline weil kurz
+    void setBackgroundcolor(QColor bgColor) {mBackgroundColor = bgColor; repaint();}  //setter, inline weil kurz
     QColor backgroundColor() const { return mBackgroundColor; }             //getter, const schützt die Member vor Änderungen
 
-    void setShape (ShapeType shape) { mShape = shape; on_shape_changed(); }
+    void setShape (ShapeType shape) { mShape = shape; on_shape_changed(); repaint(); }
     ShapeType shape() const { return mShape; }
 
-    bool option1=true;
+    void setScale(float scale) { mScale = scale; repaint(); }
+    float scale() const { return mScale; }
+
+    void setCool(bool Cool) { optionCool = Cool; repaint(); }
+    bool mCool() const { return optionCool; }
 
 protected:
     void paintEvent(QPaintEvent *event) override;
@@ -31,6 +35,7 @@ private:
     QColor mBackgroundColor;
     QColor mShapeColor;
     ShapeType mShape;
+    bool optionCool=true;
 
     float mIntervalLength;
     float mScale;

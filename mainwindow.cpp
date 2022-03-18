@@ -6,6 +6,8 @@ MainWindow::MainWindow(QWidget *parent)
     , ui(new Ui::MainWindow)    //formdatei laden
 {
     ui->setupUi(this);      //setup form
+
+    setScaleSpinner();
 }
 
 MainWindow::~MainWindow()
@@ -16,36 +18,49 @@ MainWindow::~MainWindow()
 void MainWindow::on_btnAstroid_clicked()
 {
     this->ui->renderArea->setShape(RenderArea::Astroid);
-    this->ui->renderArea->repaint();
+    setScaleSpinner();
 }
 
 void MainWindow::on_btnCycloid_clicked()
 {
     this->ui->renderArea->setShape(RenderArea::Cycloid);
-    this->ui->renderArea->repaint();
+    setScaleSpinner();
 }
 
 void MainWindow::on_btnHuygens_clicked()
 {
     this->ui->renderArea->setShape(RenderArea::HuygensCycloid);
-    this->ui->renderArea->repaint();
+    setScaleSpinner();
 }
 
 void MainWindow::on_btnHypo_clicked()
 {
     this->ui->renderArea->setShape(RenderArea::HypoCycloid);
-    this->ui->renderArea->repaint();
+    setScaleSpinner();
 }
 
 void MainWindow::on_btnLine_clicked()
 {
     this->ui->renderArea->setShape(RenderArea::Line);
-    this->ui->renderArea->repaint();
+    setScaleSpinner();
 }
 
 void MainWindow::on_option1_clicked(bool checked)
 {
-    this->ui->renderArea->option1 = checked;
-    this->ui->renderArea->repaint();
+    this->ui->renderArea->setCool(checked);
 }
+
+
+void MainWindow::on_spinScale_valueChanged(double scale)
+{
+    this->ui->renderArea->setScale(scale);
+}
+
+void MainWindow::setScaleSpinner(){
+    this->ui->spinScale->setValue(this->ui->renderArea->scale() );
+}
+
+
+
+
 
