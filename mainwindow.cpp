@@ -1,5 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
+#include <QColorDialog>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -17,7 +18,7 @@ MainWindow::~MainWindow()
 
 void MainWindow::update_ui(){
     this->ui->slideScale->setValue(this->ui->renderArea->scale() );
-    this->ui->slideInterval->setValue(this->ui->renderArea->Interval() );
+    this->ui->slideInterval->setValue(10*this->ui->renderArea->Interval() );      //int max 200/10    int slider zu float konvert
     this->ui->spinCount->setValue(this->ui->renderArea->stepCount() );
 
     this->ui->lcdZoom->display(this->ui->renderArea->scale() );
@@ -69,12 +70,26 @@ void MainWindow::on_slideScale_valueChanged(int value)
 
 void MainWindow::on_slideInterval_valueChanged(int value)
 {
-    this->ui->renderArea->setInterval(value);
+    this->ui->renderArea->setInterval(value/10);      //int max 200/10    int slider zu float konvert
     update_ui();
 }
 
 void MainWindow::on_spinCount_valueChanged(double arg1)
 {
     this->ui->renderArea->setStepCount(arg1);
+}
+
+
+void MainWindow::on_btnBackground_clicked()
+{
+    QColor color = QColorDialog::getColor(ui->renderArea->backgroundColor(), this, "Select Color");
+    ui->renderArea->setBackgroundColor(color);
+}
+
+
+void MainWindow::on_btnLineColor_clicked()
+{
+    QColor color = QColorDialog::getColor(ui->renderArea->ShapeColor(), this, "Select Color");
+    ui->renderArea->setShapeColor(color);
 }
 

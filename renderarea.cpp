@@ -12,11 +12,11 @@ RenderArea::RenderArea(QWidget *parent) :
 }
 
 QSize RenderArea::minimumSizeHint() const { //recommended minimum size for the widget
-    return QSize(100,100);
+    return QSize(400,300);
 }
 
 QSize RenderArea::sizeHint() const {        //return the preferred size of this item.
-    return QSize(400,200);
+    return QSize(400,400);
 }
 
 void RenderArea::on_shape_changed(){
@@ -25,10 +25,10 @@ void RenderArea::on_shape_changed(){
         mScale = 80;
         mIntervalLength = 2 * M_PI;
         mStepCount = 256;
-        setBackgroundcolor(Qt::darkRed);          //aus dem beispiel
+        //setBackgroundColor(Qt::darkRed);          //aus dem beispiel
         break;
     case Cycloid:
-        setBackgroundcolor(QColorConstants::DarkGreen);    //meine möglichkeit
+        //setBackgroundColor(QColorConstants::DarkGreen);    //meine möglichkeit
         mScale = 8;
         mIntervalLength = 6 * M_PI;
         mStepCount = 128;
@@ -37,23 +37,23 @@ void RenderArea::on_shape_changed(){
         mScale = 8;
         mIntervalLength = 4 * M_PI;
         mStepCount = 256;
-        setBackgroundcolor(QColorConstants::DarkYellow);
+        //setBackgroundColor(QColorConstants::DarkYellow);
         break;
     case HypoCycloid:
         mScale = 30;
         mIntervalLength = 2 * M_PI;
         mStepCount = 256;
-        setBackgroundcolor(QColorConstants::DarkBlue);
+        //setBackgroundColor(QColorConstants::DarkBlue);
         break;
     case Line:
         mScale = 100;            //Länge
         mIntervalLength = 1;    //not really neaded
         mStepCount = 128;
-        setBackgroundcolor(QColorConstants::DarkBlue);
+        //setBackgroundColor(QColorConstants::DarkBlue);
         break;
     default:                                                //wichtig, default sollte immer gemacht werden
 
-        setBackgroundcolor(QColorConstants::DarkMagenta);    //meine möglichkeit
+        setBackgroundColor(QColorConstants::DarkMagenta);    //meine möglichkeit
         break;
     }
 }
@@ -131,7 +131,7 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
     QPointF start = center;
     QPointF fprevPixel = compute(-mIntervalLength) * mScale + center;
 
-    float step = mIntervalLength / mStepCount;
+    float step = mIntervalLength / mStepCount;              //
     for (float t=-mIntervalLength; t < mIntervalLength; t += step){
 
         QPointF fpoint = compute(t) * mScale + center;

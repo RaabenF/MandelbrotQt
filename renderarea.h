@@ -14,13 +14,16 @@ public:
 
     enum ShapeType { Astroid, Cycloid, HuygensCycloid, HypoCycloid, Line };
 
-    void setBackgroundcolor(QColor bgColor) {mBackgroundColor = bgColor; repaint();}  //setter, inline weil kurz
+    void setBackgroundColor(QColor color) {mBackgroundColor = color; repaint();}  //setter, inline weil kurz
     QColor backgroundColor() const { return mBackgroundColor; }             //getter, const schützt die Member vor Änderungen
+
+    void setShapeColor(QColor color) {mShapeColor = color; repaint();}  //setter, inline weil kurz
+    QColor ShapeColor() const { return mShapeColor; }             //getter, const schützt die Member vor Änderungen
 
     void setShape (ShapeType shape) { mShape = shape; on_shape_changed(); repaint(); }
     ShapeType shape() const { return mShape; }
 
-    void setInterval(int value) { mIntervalLength = value; repaint(); }
+    void setInterval(float value) { mIntervalLength = value; repaint(); }
     float Interval() const { return mIntervalLength; }
 
     void setScale(int scale) { mScale = scale; repaint(); }     //int->float is ok da nur ganze werte
