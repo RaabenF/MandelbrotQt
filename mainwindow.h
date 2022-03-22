@@ -30,12 +30,16 @@ private slots:
 
     void on_option1_clicked(bool checked);
 
-    void on_spinScale_valueChanged(double arg1);
+    void on_slideInterval_valueChanged(int value);
+
+    void on_slideScale_valueChanged(int value);
+
+    void on_spinCount_valueChanged(double arg1);
 
 private:
     //Ui::MainWindow *ui;   //ist gleich:
     Ui_MainWindow *ui;
 
-    void setScaleSpinner();
+    void update_ui();
 };
 #endif // MAINWINDOW_H

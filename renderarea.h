@@ -20,11 +20,17 @@ public:
     void setShape (ShapeType shape) { mShape = shape; on_shape_changed(); repaint(); }
     ShapeType shape() const { return mShape; }
 
-    void setScale(float scale) { mScale = scale; repaint(); }
+    void setInterval(int value) { mIntervalLength = value; repaint(); }
+    float Interval() const { return mIntervalLength; }
+
+    void setScale(int scale) { mScale = scale; repaint(); }     //int->float is ok da nur ganze werte
     float scale() const { return mScale; }
 
+    void setStepCount(int count) {mStepCount = count; repaint(); }
+    int stepCount () const {return mStepCount; }
+
     void setCool(bool Cool) { optionCool = Cool; repaint(); }
-    bool mCool() const { return optionCool; }
+    bool Cool() const { return optionCool; }
 
 protected:
     void paintEvent(QPaintEvent *event) override;
