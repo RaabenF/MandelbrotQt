@@ -26,6 +26,12 @@
      <layout class="QVBoxLayout" name="verticalLayout">
       <item>
        <widget class="QListView" name="lvShape">
+        <property name="minimumSize">
+         <size>
+          <width>100</width>
+          <height>0</height>
+         </size>
+        </property>
         <property name="layoutMode">
          <enum>QListView::Batched</enum>
         </property>
