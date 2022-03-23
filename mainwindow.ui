@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>553</width>
+    <width>551</width>
     <height>315</height>
    </rect>
   </property>
@@ -25,37 +25,9 @@
     <item row="0" column="1">
      <layout class="QVBoxLayout" name="verticalLayout">
       <item>
-       <widget class="QPushButton" name="btnAstroid">
-        <property name="text">
-         <string>Astroid</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="btnCycloid">
-        <property name="text">
-         <string>Cycloid</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="btnHuygens">
-        <property name="text">
-         <string>HuygensC</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="btnHypo">
-        <property name="text">
-         <string>Hypo Cycloid</string>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="QPushButton" name="btnLine">
-        <property name="text">
-         <string>Line</string>
+       <widget class="QListView" name="lvShape">
+        <property name="layoutMode">
+         <enum>QListView::Batched</enum>
         </property>
        </widget>
       </item>
@@ -74,6 +46,12 @@
       </item>
       <item>
        <widget class="QDoubleSpinBox" name="spinCount">
+        <property name="buttonSymbols">
+         <enum>QAbstractSpinBox::PlusMinus</enum>
+        </property>
+        <property name="decimals">
+         <number>0</number>
+        </property>
         <property name="maximum">
          <double>512.000000000000000</double>
         </property>

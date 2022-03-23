@@ -2,6 +2,8 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
+#include <qtreeview.h>
+#include <QStringListModel>
 
 #include <ui_mainwindow.h>  //versucht ohne namespace Ui zu machen, geht
 
@@ -18,15 +20,15 @@ public:
     ~MainWindow();
 
 private slots:
-    void on_btnAstroid_clicked();
+//    void on_btnAstroid_clicked();
 
-    void on_btnCycloid_clicked();
+//    void on_btnCycloid_clicked();
 
-    void on_btnHuygens_clicked();
+//    void on_btnHuygens_clicked();
 
-    void on_btnHypo_clicked();
+//    void on_btnHypo_clicked();
 
-    void on_btnLine_clicked();
+//    void on_btnLine_clicked();
 
     void on_option1_clicked(bool checked);
 
@@ -40,10 +42,16 @@ private slots:
 
     void on_btnLineColor_clicked();
 
+    void on_lvShape_clicked(const QModelIndex &index);
+
 private:
     //Ui::MainWindow *ui;   //ist gleich:
     Ui_MainWindow *ui;
+    QStringListModel *modelShape;
+    QStringList ShapeList;
 
     void update_ui();
+
+
 };
 #endif // MAINWINDOW_H

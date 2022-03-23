@@ -19,8 +19,25 @@ QSize RenderArea::sizeHint() const {        //return the preferred size of this 
     return QSize(400,400);
 }
 
+void RenderArea::setShape (ShapeType shape) {
+    mShape = shape;
+    on_shape_changed();
+    repaint();
+}
+//void RenderArea::setShape (QString shapename){
+//    for(unsigned long i=0; i<sizeof(ShapeType); i++){
+//        shapename!=ShapeType
+//    }
+//    //mShape = shapename.toStdString();
+//}
+void RenderArea::setShape (int row){
+    mShapeIndex = row;
+    on_shape_changed();
+    repaint();
+}
+
 void RenderArea::on_shape_changed(){
-    switch(mShape){
+    switch(mShapeIndex){
     case Astroid:
         mScale = 80;
         mIntervalLength = 2 * M_PI;
@@ -53,14 +70,14 @@ void RenderArea::on_shape_changed(){
         break;
     default:                                                //wichtig, default sollte immer gemacht werden
 
-        setBackgroundColor(QColorConstants::DarkMagenta);    //meine möglichkeit
+        setBackgroundColor(QColorConstants::DarkYellow);    //meine möglichkeit
         break;
     }
 }
 
 QPointF RenderArea::compute(float t){
 
-    switch(mShape){
+    switch(mShapeIndex){
     case Astroid:
         return compute_astroid(t);
         break;

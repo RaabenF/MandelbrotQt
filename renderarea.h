@@ -20,8 +20,9 @@ public:
     void setShapeColor(QColor color) {mShapeColor = color; repaint();}  //setter, inline weil kurz
     QColor ShapeColor() const { return mShapeColor; }             //getter, const schützt die Member vor Änderungen
 
-    void setShape (ShapeType shape) { mShape = shape; on_shape_changed(); repaint(); }
-    ShapeType shape() const { return mShape; }
+    void setShape (ShapeType shape);
+    //void setShape (QString shapename);    //geht so nicht
+    void setShape (int row);
 
     void setInterval(float value) { mIntervalLength = value; repaint(); }
     float Interval() const { return mIntervalLength; }
@@ -44,6 +45,7 @@ private:
     QColor mBackgroundColor;
     QColor mShapeColor;
     ShapeType mShape;
+    int mShapeIndex;
     bool optionCool=true;
 
     float mIntervalLength;

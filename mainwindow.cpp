@@ -5,8 +5,15 @@
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
     , ui(new Ui::MainWindow)    //formdatei laden
+    ,modelShape(new QStringListModel(this) )
 {
     ui->setupUi(this);      //setup form
+
+    ShapeList << "Astroid" << "Cycloid" << "HuygensCycloid" << "HypoCycloid" << "Line";
+    // Populate our model
+    modelShape->setStringList(ShapeList);    //string-list-model mShapeList
+
+    ui->lvShape->setModel(modelShape);    // Glue model and view together
 
     update_ui();
 }
@@ -23,39 +30,38 @@ void MainWindow::update_ui(){
 
     this->ui->lcdZoom->display(this->ui->renderArea->scale() );
     this->ui->lcdInterval->display(this->ui->renderArea->Interval() );
-
 }
 
 
-void MainWindow::on_btnAstroid_clicked()
-{
-    this->ui->renderArea->setShape(RenderArea::Astroid);
-    update_ui();
-}
+//void MainWindow::on_btnAstroid_clicked()
+//{
+//    this->ui->renderArea->setShape(RenderArea::Astroid);
+//    update_ui();
+//}
 
-void MainWindow::on_btnCycloid_clicked()
-{
-    this->ui->renderArea->setShape(RenderArea::Cycloid);
-    update_ui();
-}
+//void MainWindow::on_btnCycloid_clicked()
+//{
+//    this->ui->renderArea->setShape(RenderArea::Cycloid);
+//    update_ui();
+//}
 
-void MainWindow::on_btnHuygens_clicked()
-{
-    this->ui->renderArea->setShape(RenderArea::HuygensCycloid);
-    update_ui();
-}
+//void MainWindow::on_btnHuygens_clicked()
+//{
+//    this->ui->renderArea->setShape(RenderArea::HuygensCycloid);
+//    update_ui();
+//}
 
-void MainWindow::on_btnHypo_clicked()
-{
-    this->ui->renderArea->setShape(RenderArea::HypoCycloid);
-    update_ui();
-}
+//void MainWindow::on_btnHypo_clicked()
+//{
+//    this->ui->renderArea->setShape(RenderArea::HypoCycloid);
+//    update_ui();
+//}
 
-void MainWindow::on_btnLine_clicked()
-{
-    this->ui->renderArea->setShape(RenderArea::Line);
-    update_ui();
-}
+//void MainWindow::on_btnLine_clicked()
+//{
+//    this->ui->renderArea->setShape(RenderArea::Line);
+//    update_ui();
+//}
 
 void MainWindow::on_option1_clicked(bool checked)
 {
@@ -91,5 +97,16 @@ void MainWindow::on_btnLineColor_clicked()
 {
     QColor color = QColorDialog::getColor(ui->renderArea->ShapeColor(), this, "Select Color");
     ui->renderArea->setShapeColor(color);
+}
+
+
+void MainWindow::on_lvShape_clicked(const QModelIndex &index)
+{
+    //QString itemText = index.data(Qt::DisplayRole).toString();    //Text des List Items
+    ui->renderArea->setShape(index.row() );
+
+
+
+
 }
 
