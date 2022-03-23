@@ -48,7 +48,6 @@ private:
     //Ui::MainWindow *ui;   //ist gleich:
     Ui_MainWindow *ui;
     QStringListModel *modelShape;
-    QStringList ShapeList;
 
     void update_ui();
 

@@ -7,8 +7,11 @@ RenderArea::RenderArea(QWidget *parent) :
     mBackgroundColor(Qt::darkMagenta),  //color const ist in Qt lowercase, bei QColorConstants upper
     mShapeColor(255,255,255),
     mShape(Astroid)                     //interessant: was hier wie eine Funktion aussieht, initialisiert eine Variable (scheint normal in der Initliste)
+
 {
     on_shape_changed();     //Initialisierung der Zeichnung
+    ShapeList << "Astroid" << "Cycloid" << "HuygensCycloid" << "HypoCycloid" << "Line" << "Circle" << "Elipse" << "Mandel";
+
 }
 
 QSize RenderArea::minimumSizeHint() const { //recommended minimum size for the widget
@@ -40,7 +43,7 @@ void RenderArea::on_shape_changed(){
     switch(mShapeIndex){
     case Astroid:
         mScale = 80;
-        mIntervalLength = 2 * M_PI;
+        mIntervalLength = M_PI; //2 * M_PI;
         mStepCount = 256;
         //setBackgroundColor(Qt::darkRed);          //aus dem beispiel
         break;
@@ -68,9 +71,24 @@ void RenderArea::on_shape_changed(){
         mStepCount = 128;
         //setBackgroundColor(QColorConstants::DarkBlue);
         break;
+    case Circle:
+        mScale = 140;
+        mIntervalLength = 2 * M_PI;
+        mStepCount = 256;
+        break;
+    case Elipse:
+        mScale = 30;
+        mIntervalLength = 2 * M_PI;
+        mStepCount = 256;
+        break;
+    case Mandel:
+        mScale = 30;
+        mIntervalLength = 2 * M_PI;
+        mStepCount = 256;
+        break;
     default:                                                //wichtig, default sollte immer gemacht werden
-
-        setBackgroundColor(QColorConstants::DarkYellow);    //meine möglichkeit
+        //rest egal wenn alles initialisiert ist
+        setBackgroundColor(QColorConstants::DarkYellow);
         break;
     }
 }
@@ -92,6 +110,15 @@ QPointF RenderArea::compute(float t){
         break;
     case Line:
         return  compute_line(t);
+        break;
+    case Circle:
+        return compute_circle(t);
+        break;
+    case Elipse:
+        return compute_elipse(t);
+        break;
+    case Mandel:
+        return compute_mandel(t);
         break;
     default:
         break;
@@ -129,7 +156,15 @@ QPointF RenderArea::compute_hypo(float t){
 QPointF RenderArea::compute_line(float t){
     return QPointF( t, t );
 }
-
+QPointF RenderArea::compute_circle(float t){
+    return QPointF( cos(t), sin(t) );
+}
+QPointF RenderArea::compute_elipse(float t){
+    return QPointF( t, t );
+}
+QPointF RenderArea::compute_mandel(float t){
+    return QPointF( t, t );
+}
 
 void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wenn nötig, protected+override im .h
 {

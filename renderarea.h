@@ -12,7 +12,10 @@ public:
     QSize minimumSizeHint() const override; // Q_DECL_OVERRIDE; im Tutorial ist deprecated
     QSize sizeHint() const override;
 
-    enum ShapeType { Astroid, Cycloid, HuygensCycloid, HypoCycloid, Line };
+    enum ShapeType :int { Astroid, Cycloid, HuygensCycloid, HypoCycloid, Line, Circle, Elipse, Mandel };    //enum typ int
+    ShapeType EnumOfIndex(int i) { return static_cast<ShapeType>(i); }
+
+    QStringList ShapeList;
 
     void setBackgroundColor(QColor color) {mBackgroundColor = color; repaint();}  //setter, inline weil kurz
     QColor backgroundColor() const { return mBackgroundColor; }             //getter, const schützt die Member vor Änderungen
@@ -44,7 +47,7 @@ signals:
 private:
     QColor mBackgroundColor;
     QColor mShapeColor;
-    ShapeType mShape;
+    ShapeType mShape;   //nicht mehr verwendet
     int mShapeIndex;
     bool optionCool=true;
 
@@ -58,6 +61,9 @@ private:
     QPointF compute_huygens(float t);
     QPointF compute_hypo(float t);
     QPointF compute_line(float t);
+    QPointF compute_circle(float t);
+    QPointF compute_elipse(float t);
+    QPointF compute_mandel(float t);
     void on_shape_changed();
 };
 

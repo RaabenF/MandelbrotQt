@@ -9,10 +9,8 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);      //setup form
 
-    ShapeList << "Astroid" << "Cycloid" << "HuygensCycloid" << "HypoCycloid" << "Line";
     // Populate our model
-    modelShape->setStringList(ShapeList);    //string-list-model mShapeList
-
+    modelShape->setStringList(ui->renderArea->ShapeList);    //string-list-model mShapeList
     ui->lvShape->setModel(modelShape);    // Glue model and view together
 
     update_ui();
