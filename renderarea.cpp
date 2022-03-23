@@ -55,13 +55,13 @@ void RenderArea::on_shape_changed(){
         break;
     case HuygensCycloid:
         mScale = 8;
-        mIntervalLength = 4 * M_PI;
+        mIntervalLength = 2 * M_PI;
         mStepCount = 256;
         //setBackgroundColor(QColorConstants::DarkYellow);
         break;
     case HypoCycloid:
         mScale = 30;
-        mIntervalLength = 2 * M_PI;
+        mIntervalLength = M_PI;
         mStepCount = 256;
         //setBackgroundColor(QColorConstants::DarkBlue);
         break;
@@ -73,17 +73,17 @@ void RenderArea::on_shape_changed(){
         break;
     case Circle:
         mScale = 140;
-        mIntervalLength = 2 * M_PI;
+        mIntervalLength = M_PI;
         mStepCount = 256;
         break;
     case Elipse:
         mScale = 30;
-        mIntervalLength = 2 * M_PI;
+        mIntervalLength = M_PI;
         mStepCount = 256;
         break;
     case Mandel:
         mScale = 30;
-        mIntervalLength = 2 * M_PI;
+        mIntervalLength = M_PI;
         mStepCount = 256;
         break;
     default:                                                //wichtig, default sollte immer gemacht werden
