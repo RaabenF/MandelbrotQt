@@ -61,12 +61,12 @@ void MainWindow::on_slideScale_valueChanged(int value)
 void MainWindow::on_slideInterval_valueChanged(int value)
 {
     //int-slider changes float value while casting
-    float temp = value/10;
+    float temp = value/10;    //float->int
     float tempinterval = this->ui->renderArea->Interval();
             tempinterval = temp - tempinterval;
     if(0.5< tempinterval || -0.5> tempinterval ){
         if(!prevent_slideCast){
-            this->ui->renderArea->setInterval(temp);    //float->int
+            this->ui->renderArea->setInterval(temp);    //float->int, setze Slider->Interval
             update_ui();
             prevent_slideCast = true;
         }

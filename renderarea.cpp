@@ -77,9 +77,9 @@ void RenderArea::on_shape_changed(){
         mStepCount = 128;
         break;
     case Elipse:
-        mScale = 30;
+        mScale = 80;
         mIntervalLength = M_PI;
-        mStepCount = 256;
+        mStepCount = 128;
         break;
     case Mandel:
         mScale = 30;
@@ -162,7 +162,7 @@ QPointF RenderArea::compute_circle(float t){
     return QPointF( cos(t), sin(t) );
 }
 QPointF RenderArea::compute_elipse(float t){
-    return QPointF( t, t );
+    return QPointF( 2*cos(t), sin(t) );
 }
 QPointF RenderArea::compute_mandel(float t){
     return QPointF( t, t );
