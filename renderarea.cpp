@@ -74,7 +74,7 @@ void RenderArea::on_shape_changed(){
     case Circle:
         mScale = 140;
         mIntervalLength = M_PI;
-        mStepCount = 256;
+        mStepCount = 128;
         break;
     case Elipse:
         mScale = 30;
@@ -181,10 +181,12 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
     painter.drawRect(this->rect() );
     QPointF center = this->rect().center();     // war im tut kein floatP, ist aber egal, konvertierung erfolgt auch automatisch
     QPointF start = center;
-    QPointF fprevPixel = compute(-mIntervalLength) * mScale + center;
+    float step = mIntervalLength / mStepCount;
+    float tempInterval = mIntervalLength + step;
 
-    float step = mIntervalLength / mStepCount;              //
-    for (float t=-mIntervalLength; t < mIntervalLength; t += step){
+    QPointF fprevPixel = compute(-tempInterval) * mScale + center;
+             //
+    for (float t=-tempInterval; t < tempInterval + step; t += step){
 
         QPointF fpoint = compute(t) * mScale + center;
 

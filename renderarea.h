@@ -51,8 +51,8 @@ private:
     int mShapeIndex;
     bool optionCool=true;
 
-    float mIntervalLength;
-    float mScale;
+    float mIntervalLength, mScale;
+    float step, tempInterval;
     int mStepCount = 256;
 
     QPointF compute(float t);           //dispatcher based on type

@@ -22,12 +22,13 @@ MainWindow::~MainWindow()
 }
 
 void MainWindow::update_ui(){
-    this->ui->slideScale->setValue(this->ui->renderArea->scale() );
-    this->ui->slideInterval->setValue(10*this->ui->renderArea->Interval() );      //int max 200/10    int slider zu float konvert
     this->ui->spinCount->setValue(this->ui->renderArea->stepCount() );
 
-    this->ui->lcdZoom->display(this->ui->renderArea->scale() );
+    this->ui->lcdZoom->display(this->ui->renderArea->scale() );         //scale=zoom=stepCount
+    this->ui->slideScale->setValue(this->ui->renderArea->scale() );
+
     this->ui->lcdInterval->display(this->ui->renderArea->Interval() );
+    //this->ui->slideInterval->setValue(10 * this->ui->renderArea->Interval() );      //int max 200/10    int slider zu float konvert
 }
 
 
@@ -61,36 +62,20 @@ void MainWindow::update_ui(){
 //    update_ui();
 //}
 
-void MainWindow::on_option1_clicked(bool checked)
-{
-    this->ui->renderArea->setCool(checked);
-}
-
-void MainWindow::on_slideScale_valueChanged(int value)
-{
-    this->ui->renderArea->setScale(value);
-    update_ui();
-}
-
-void MainWindow::on_slideInterval_valueChanged(int value)
-{
-    this->ui->renderArea->setInterval(value/10);      //int max 200/10    int slider zu float konvert
-    update_ui();
-}
-
 void MainWindow::on_spinCount_valueChanged(double arg1)
 {
     this->ui->renderArea->setStepCount(arg1);
 }
-
+void MainWindow::on_option1_clicked(bool checked)
+{
+    this->ui->renderArea->setCool(checked);
+}
 
 void MainWindow::on_btnBackground_clicked()
 {
     QColor color = QColorDialog::getColor(ui->renderArea->backgroundColor(), this, "Select Color");
     ui->renderArea->setBackgroundColor(color);
 }
-
-
 void MainWindow::on_btnLineColor_clicked()
 {
     QColor color = QColorDialog::getColor(ui->renderArea->ShapeColor(), this, "Select Color");
@@ -98,13 +83,22 @@ void MainWindow::on_btnLineColor_clicked()
 }
 
 
+void MainWindow::on_slideScale_valueChanged(int value)
+{
+    this->ui->renderArea->setScale(value);
+    update_ui();
+}
+void MainWindow::on_slideInterval_valueChanged(int value)
+{
+    //this->ui->renderArea->setInterval(value/10);
+    update_ui();
+}
+
+
 void MainWindow::on_lvShape_clicked(const QModelIndex &index)
 {
     //QString itemText = index.data(Qt::DisplayRole).toString();    //Text des List Items
     ui->renderArea->setShape(index.row() );
-
-
-
-
+    update_ui();
 }
 
