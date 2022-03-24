@@ -49,18 +49,18 @@ void RenderArea::on_shape_changed(){
         break;
     case Cycloid:
         //setBackgroundColor(QColorConstants::DarkGreen);    //meine möglichkeit
-        mScale = 8;
+        mScale = 10;
         mIntervalLength = 6 * M_PI;
         mStepCount = 128;
         break;
     case HuygensCycloid:
-        mScale = 8;
+        mScale = 32;
         mIntervalLength = 2 * M_PI;
         mStepCount = 256;
         //setBackgroundColor(QColorConstants::DarkYellow);
         break;
     case HypoCycloid:
-        mScale = 30;
+        mScale = 60;
         mIntervalLength = M_PI;
         mStepCount = 256;
         //setBackgroundColor(QColorConstants::DarkBlue);
@@ -139,20 +139,20 @@ QPointF RenderArea::compute_astroid(float t){
 }
 QPointF RenderArea::compute_cycloid(float t){
     return QPointF(
-                1.5*(t-sin(t)),      //Y -> getauscht
-                1.5*(1+cos(t))     //X
+                (t-sin(t)),      //Y -> getauscht
+                (1+cos(t))     //X
     );
 }
 QPointF RenderArea::compute_huygens(float t){
     return QPointF(
-                4*(3*cos(t) - cos(3*t)),    //X
-                4*(3*sin(t) - sin(3*t))     //Y
+                (3*cos(t) - cos(3*t)),    //X
+                (3*sin(t) - sin(3*t))     //Y
     );
 }
 QPointF RenderArea::compute_hypo(float t){
     return QPointF(
-                1.5*(2*cos(t) + cos(2*t)),  //X
-                1.5*(2*sin(t) - sin(2*t))   //Y
+                (2*cos(t) + cos(2*t)),  //X
+                (2*sin(t) - sin(2*t))   //Y
     );
 }
 QPointF RenderArea::compute_line(float t){
