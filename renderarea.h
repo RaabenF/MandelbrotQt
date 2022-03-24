@@ -12,7 +12,7 @@ public:
     QSize minimumSizeHint() const override; // Q_DECL_OVERRIDE; im Tutorial ist deprecated
     QSize sizeHint() const override;
 
-    enum ShapeType :int { Astroid, Cycloid, HuygensCycloid, HypoCycloid, Line, Circle, Elipse, Mandel };    //enum typ int
+    enum ShapeType :int { Astroid, Cycloid, HuygensCycloid, HypoCycloid, Line, Circle, Elipse, Fancy, Star, Mandel };    //enum typ int
     ShapeType EnumOfIndex(int i) { return static_cast<ShapeType>(i); }
 
     QStringList ShapeList;
@@ -63,6 +63,8 @@ private:
     QPointF compute_line(float t);
     QPointF compute_circle(float t);
     QPointF compute_elipse(float t);
+    QPointF compute_fancy(float t);
+    QPointF compute_star(float t);
     QPointF compute_mandel(float t);
     void on_shape_changed();
 };

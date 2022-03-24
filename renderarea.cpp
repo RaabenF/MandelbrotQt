@@ -10,7 +10,7 @@ RenderArea::RenderArea(QWidget *parent) :
 
 {
     on_shape_changed();     //Initialisierung der Zeichnung
-    ShapeList << "Astroid" << "Cycloid" << "HuygensCycloid" << "HypoCycloid" << "Line" << "Circle" << "Elipse" << "Mandel";
+    ShapeList << "Astroid" << "Cycloid" << "HuygensCycloid" << "HypoCycloid" << "Line" << "Circle" << "Elipse" << "Fancy" << "Star" << "Mandel";
 
 }
 
@@ -81,6 +81,16 @@ void RenderArea::on_shape_changed(){
         mIntervalLength = M_PI;
         mStepCount = 128;
         break;
+    case Fancy:
+        mScale = 9;
+        mIntervalLength = 6 * M_PI;
+        mStepCount = 512;
+        break;
+    case Star:
+        mScale = 25;
+        mIntervalLength = 3 * M_PI;
+        mStepCount = 256;
+        break;
     case Mandel:
         mScale = 30;
         mIntervalLength = M_PI;
@@ -119,6 +129,12 @@ QPointF RenderArea::compute(float t){
     case Elipse:
         return compute_elipse(t);
         break;
+    case Fancy:
+        return compute_fancy(t);
+        break;
+    case Star:
+        return compute_star(t);
+        break;
     case Mandel:
         return compute_mandel(t);
         break;
@@ -139,7 +155,7 @@ QPointF RenderArea::compute_astroid(float t){
 }
 QPointF RenderArea::compute_cycloid(float t){
     return QPointF(
-                (t-sin(t)),      //Y -> getauscht
+                (t-sin(t)),    //Y -> getauscht
                 (1+cos(t))     //X
     );
 }
@@ -164,6 +180,15 @@ QPointF RenderArea::compute_circle(float t){
 QPointF RenderArea::compute_elipse(float t){
     return QPointF( 2*cos(t), sin(t) );
 }
+QPointF RenderArea::compute_fancy(float t){
+    return QPointF( 11.0*cos(t) - 6.0*cos(11.0/6.0*t),      //ohne komma rechnet er tatsächlich in INT!!! trotz cos
+                    11.0*sin(t) - 6.0*sin(11.0/6.0*t) );
+}
+QPointF RenderArea::compute_star(float t){
+    const float R=5, r=3, d=5;
+    return QPointF( (R-r)*cos(t) + d*cos(t*((R-r)/r) ),
+                    (R-r)*sin(t) - d*sin(t*((R-r)/r) ) );
+}
 QPointF RenderArea::compute_mandel(float t){
     return QPointF( t, t );
 }
@@ -186,25 +211,30 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
     float step = mIntervalLength / mStepCount;
     float tempInterval = mIntervalLength + step;
 
-    QPointF fprevPixel = compute(-tempInterval) * mScale + center;
-             //
-    for (float t=-tempInterval; t < tempInterval + step; t += step){
-
-        QPointF fpoint = compute(t) * mScale + center;
-
-        //konvertiere Float2D zu Int(Pixel)2D, unnötig
-//        QPoint pixel;
-//        pixel.setX(fpoint.x() * mScale + center.x() );
-//        pixel.setY(fpoint.y() * mScale + center.y() );
-//        painter.drawPoint(pixel);
-
-        if(optionCool)painter.drawLine(fpoint, start);        //das war zuerst ein Fehler im Tut, als prevPixel gefehlt hat, grad übernommen
-        painter.drawLine(fpoint, fprevPixel);
-        fprevPixel = fpoint;
-
+    if(mShapeIndex == Mandel){
+        QPointF fprevPixel = compute(0) * mScale + center;
+        for (float t=0; t < tempInterval; t += step){
+            QPointF fpoint = compute(t) * mScale + center;
+            if(optionCool)painter.drawLine(fpoint, start);        //effekt
+            painter.drawLine(fpoint, fprevPixel);
+            fprevPixel = fpoint;
+        }
     }
-    //painter.drawLine(this->rect().topLeft(), this->rect().bottomRight() );
-
+    else{
+        QPointF fprevPixel = compute(-tempInterval) * mScale + center;
+        for (float t=-tempInterval; t < tempInterval + step; t += step){
+            QPointF fpoint = compute(t) * mScale + center;
+            //konvertiere Float2D zu Int(Pixel)2D, unnötig
+        //        QPoint pixel;
+        //        pixel.setX(fpoint.x() * mScale + center.x() );
+        //        pixel.setY(fpoint.y() * mScale + center.y() );
+        //        painter.drawPoint(pixel);
+            if(optionCool)painter.drawLine(fpoint, start);        //das war zuerst ein Fehler im Tut, als prevPixel gefehlt hat, grad übernommen
+            painter.drawLine(fpoint, fprevPixel);
+            fprevPixel = fpoint;
+        }
+        //painter.drawLine(this->rect().topLeft(), this->rect().bottomRight() );
+    }
 }
 
 
