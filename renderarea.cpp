@@ -87,7 +87,9 @@ void RenderArea::on_shape_changed(){
         mStepCount = 256;
         break;
     default:                                                //wichtig, default sollte immer gemacht werden
-        //rest egal wenn alles initialisiert ist
+        mScale = 80;
+        mIntervalLength = M_PI; //2 * M_PI;
+        mStepCount = 256;
         setBackgroundColor(QColorConstants::DarkYellow);
         break;
     }

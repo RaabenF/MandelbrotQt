@@ -28,39 +28,9 @@ void MainWindow::update_ui(){
     this->ui->slideScale->setValue(this->ui->renderArea->scale() );
 
     this->ui->lcdInterval->display(this->ui->renderArea->Interval() );
-    //this->ui->slideInterval->setValue(10 * this->ui->renderArea->Interval() );      //int max 200/10    int slider zu float konvert
+    this->ui->slideInterval->setValue(10 * this->ui->renderArea->Interval() );      //int max 200/10    int slider zu float konvert
 }
 
-
-//void MainWindow::on_btnAstroid_clicked()
-//{
-//    this->ui->renderArea->setShape(RenderArea::Astroid);
-//    update_ui();
-//}
-
-//void MainWindow::on_btnCycloid_clicked()
-//{
-//    this->ui->renderArea->setShape(RenderArea::Cycloid);
-//    update_ui();
-//}
-
-//void MainWindow::on_btnHuygens_clicked()
-//{
-//    this->ui->renderArea->setShape(RenderArea::HuygensCycloid);
-//    update_ui();
-//}
-
-//void MainWindow::on_btnHypo_clicked()
-//{
-//    this->ui->renderArea->setShape(RenderArea::HypoCycloid);
-//    update_ui();
-//}
-
-//void MainWindow::on_btnLine_clicked()
-//{
-//    this->ui->renderArea->setShape(RenderArea::Line);
-//    update_ui();
-//}
 
 void MainWindow::on_spinCount_valueChanged(double arg1)
 {
@@ -90,8 +60,18 @@ void MainWindow::on_slideScale_valueChanged(int value)
 }
 void MainWindow::on_slideInterval_valueChanged(int value)
 {
-    //this->ui->renderArea->setInterval(value/10);
-    update_ui();
+    //int-slider changes float value while casting
+    float temp = value/10;
+    float tempinterval = this->ui->renderArea->Interval();
+            tempinterval = temp - tempinterval;
+    if(0.5< tempinterval || -0.5> tempinterval ){
+        if(!prevent_slideCast){
+            this->ui->renderArea->setInterval(temp);    //float->int
+            update_ui();
+            prevent_slideCast = true;
+        }
+        else prevent_slideCast = false;
+    }
 }
 
 
