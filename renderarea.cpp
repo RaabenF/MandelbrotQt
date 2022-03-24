@@ -5,11 +5,14 @@
 RenderArea::RenderArea(QWidget *parent) :
     QWidget(parent),
     mBackgroundColor(Qt::darkMagenta),  //color const ist in Qt lowercase, bei QColorConstants upper
-    mShapeColor(255,255,255),
     mShape(Astroid)                     //interessant: was hier wie eine Funktion aussieht, initialisiert eine Variable (scheint normal in der Initliste)
 
 {
+    mPen.setWidth(2);
+    mPen.setColor(Qt::white);
+
     on_shape_changed();     //Initialisierung der Zeichnung
+
     ShapeList << "Astroid" << "Cycloid" << "HuygensCycloid" << "HypoCycloid" << "Line" << "Circle" << "Elipse" << "Fancy" << "Star" << "Mandel";
 
 }
@@ -201,7 +204,7 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
     painter.setRenderHint(QPainter::Antialiasing, true);
 
     painter.setBrush(mBackgroundColor );
-    painter.setPen(mShapeColor);
+    painter.setPen(mPen);   //ehem mShapeColor
 
 
     //drawing area
@@ -211,7 +214,7 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
     float step = mIntervalLength / mStepCount;
     float tempInterval = mIntervalLength + step;
 
-    if(mShapeIndex == Mandel){
+    if(mShapeIndex == Mandel){      //mandel=test
         QPointF fprevPixel = compute(0) * mScale + center;
         for (float t=0; t < tempInterval; t += step){
             QPointF fpoint = compute(t) * mScale + center;

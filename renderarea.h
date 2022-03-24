@@ -2,6 +2,7 @@
 #define RENDERAREA_H
 
 #include <QWidget>
+#include <QPen>
 
 class RenderArea : public QWidget
 {
@@ -20,8 +21,8 @@ public:
     void setBackgroundColor(QColor color) {mBackgroundColor = color; repaint();}  //setter, inline weil kurz
     QColor backgroundColor() const { return mBackgroundColor; }             //getter, const schützt die Member vor Änderungen
 
-    void setShapeColor(QColor color) {mShapeColor = color; repaint();}  //setter, inline weil kurz
-    QColor ShapeColor() const { return mShapeColor; }             //getter, const schützt die Member vor Änderungen
+    void setShapeColor(QColor color) {mPen.setColor(color); repaint();}  //setter, inline weil kurz
+    QColor ShapeColor() const { return mPen.color(); }             //getter, const schützt die Member vor Änderungen
 
     void setShape (ShapeType shape);
     //void setShape (QString shapename);    //geht so nicht
@@ -46,10 +47,10 @@ signals:
 
 private:
     QColor mBackgroundColor;
-    QColor mShapeColor;
-    ShapeType mShape;   //nicht mehr verwendet
+    QPen mPen;
+    ShapeType mShape;   //nicht mehr verwenden
     int mShapeIndex;
-    bool optionCool=true;
+    bool optionCool=false;
 
     float mIntervalLength, mScale;
     float step, tempInterval;
