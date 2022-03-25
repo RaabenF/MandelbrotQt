@@ -3,17 +3,36 @@
 #include <QPainter>
 
 RenderArea::RenderArea(QWidget *parent) :
-    QWidget(parent),
-    mBackgroundColor(Qt::darkMagenta),  //color const ist in Qt lowercase, bei QColorConstants upper
-    mShape(Astroid)                     //interessant: was hier wie eine Funktion aussieht, initialisiert eine Variable (scheint normal in der Initliste)
-
+    QWidget(parent)//,
+    //mIntervalLength(1), mScale(1), step(1), tempInterval(1), mStepCount(8)
 {
+    setBackgroundColor(Qt::darkCyan);   //hier oder in init liste, egal
     mPen.setWidth(2);
     mPen.setColor(Qt::white);
 
-    on_shape_changed();     //Initialisierung der Zeichnung
+//test, geht nicht wg kein append()
+//    shapetest[0]={     //Qlist(dynamic array) - vom struct
+//                    .id=999,
+//                    .name="dfg",    //, function_name;
+//                    .scale=1,
+//                    .interval=1,     //Length; //8, M_PI;
+//                    .steps=1        //Count;
+//                };
+//    shapetest[0]=paramShape(0,"test",10,M_PI,16);
 
-    ShapeList << "Astroid" << "Cycloid" << "HuygensCycloid" << "HypoCycloid" << "Line" << "Circle" << "Elipse" << "Fancy" << "Star" << "Mandel";
+//    for(int i=0,i<99,i++){
+//        shapestore[i]=
+//    }
+    shapestore.append(paramShape(0,"Astroid",80,M_PI,256) );
+    shapestore.append(paramShape(1,"Cycloid",10,6 * M_PI,128) );
+    shapestore.append(paramShape(2,"HygensCycloid",32,2*M_PI,256) );
+    shapestore.append(paramShape(3,"HypoCycloid",60,M_PI,256) );
+    shapestore.append(paramShape(4,"Elipse",80,M_PI,128) );
+    shapestore.append(paramShape(5,"Fancy",9,6*M_PI,512) );
+    shapestore.append(paramShape(6,"Star",25,3*M_PI,256) );
+    shapestore.append(paramShape(7,"Cloud",10,28*M_PI,128) );
+    shapestore.append(paramShape(8,"tst",10,M_PI,256) );
+    //shapestore.append(paramShape(,"",10,M_PI,256) );
 
 }
 
@@ -25,123 +44,74 @@ QSize RenderArea::sizeHint() const {        //return the preferred size of this 
     return QSize(400,400);
 }
 
-void RenderArea::setShape (ShapeType shape) {
-    mShape = shape;
-    on_shape_changed();
-    repaint();
-}
-//void RenderArea::setShape (QString shapename){
-//    for(unsigned long i=0; i<sizeof(ShapeType); i++){
-//        shapename!=ShapeType
-//    }
-//    //mShape = shapename.toStdString();
-//}
-void RenderArea::setShape (int row){
-    mShapeIndex = row;
-    on_shape_changed();
-    repaint();
+RenderArea::ShapeType RenderArea::paramShape(unsigned int id, QString name, float scale, float interval, int steps ){
+    ShapeType sdata = {     //Qlist(dynamic array) - vom struct
+         .id=id,
+         .name=name,    //, function_name;
+         .scale=scale,
+         .interval=interval,     //Length; //8, M_PI;
+         .steps=steps        //Count;
+    };
+    //alt (convenience) menüliste:
+    ShapeList.append(name);
+
+    return sdata;
 }
 
-void RenderArea::on_shape_changed(){
-    switch(mShapeIndex){
-    case Astroid:
-        mScale = 80;
-        mIntervalLength = M_PI; //2 * M_PI;
-        mStepCount = 256;
-        //setBackgroundColor(Qt::darkRed);          //aus dem beispiel
-        break;
-    case Cycloid:
-        //setBackgroundColor(QColorConstants::DarkGreen);    //meine möglichkeit
-        mScale = 10;
-        mIntervalLength = 6 * M_PI;
-        mStepCount = 128;
-        break;
-    case HuygensCycloid:
-        mScale = 32;
-        mIntervalLength = 2 * M_PI;
-        mStepCount = 256;
+int RenderArea::setShape (int row){
+    if (shapestore.length()> row ){     //length starts@ 1, row @ 0
+        mShapeIndex = row;
+        mScale = shapestore[row].scale;
+        mIntervalLength = shapestore[row].interval; //2 * M_PI;
+        mStepCount = shapestore[row].steps;
         //setBackgroundColor(QColorConstants::DarkYellow);
-        break;
-    case HypoCycloid:
-        mScale = 60;
-        mIntervalLength = M_PI;
-        mStepCount = 256;
-        //setBackgroundColor(QColorConstants::DarkBlue);
-        break;
-    case Line:
-        mScale = 100;            //Länge
-        mIntervalLength = 1;    //not really neaded
-        mStepCount = 128;
-        //setBackgroundColor(QColorConstants::DarkBlue);
-        break;
-    case Circle:
-        mScale = 140;
-        mIntervalLength = M_PI;
-        mStepCount = 128;
-        break;
-    case Elipse:
-        mScale = 80;
-        mIntervalLength = M_PI;
-        mStepCount = 128;
-        break;
-    case Fancy:
-        mScale = 9;
-        mIntervalLength = 6 * M_PI;
-        mStepCount = 512;
-        break;
-    case Star:
-        mScale = 25;
-        mIntervalLength = 3 * M_PI;
-        mStepCount = 256;
-        break;
-    case Mandel:
-        mScale = 30;
-        mIntervalLength = M_PI;
-        mStepCount = 256;
-        break;
-    default:                                                //wichtig, default sollte immer gemacht werden
-        mScale = 80;
-        mIntervalLength = M_PI; //2 * M_PI;
-        mStepCount = 256;
-        setBackgroundColor(QColorConstants::DarkYellow);
-        break;
     }
+    else{
+        qDebug() << "shapelist index out of range, no menu";
+        return shapestore.length();
+    }
+    repaint();
+    return 0;
 }
+
+//    default:                                                //wichtig, default sollte immer gemacht werden
+//        mScale = 80;
+//        mIntervalLength = M_PI; //2 * M_PI;
+//        mStepCount = 256;
+//        setBackgroundColor(QColorConstants::DarkYellow);
+//        break;
+
+
 
 QPointF RenderArea::compute(float t){
 
     switch(mShapeIndex){
-    case Astroid:
+    case 0:
         return compute_astroid(t);
         break;
-    case Cycloid:
+    case 1:
         return compute_cycloid(t);
         break;
-    case HuygensCycloid:
+    case 2:
         return  compute_huygens(t);
         break;
-    case HypoCycloid:
+    case 3:
         return  compute_hypo(t);
         break;
-    case Line:
-        return  compute_line(t);
-        break;
-    case Circle:
-        return compute_circle(t);
-        break;
-    case Elipse:
+    case 4:
         return compute_elipse(t);
         break;
-    case Fancy:
+    case 5:
         return compute_fancy(t);
         break;
-    case Star:
+    case 6:
         return compute_star(t);
         break;
-    case Mandel:
-        return compute_mandel(t);
+    case 7:
+        return compute_cloud(t);
         break;
     default:
+        return  compute_line(t);
         break;
     }
     return QPointF(0,0);
@@ -192,8 +162,11 @@ QPointF RenderArea::compute_star(float t){
     return QPointF( (R-r)*cos(t) + d*cos(t*((R-r)/r) ),
                     (R-r)*sin(t) - d*sin(t*((R-r)/r) ) );
 }
-QPointF RenderArea::compute_mandel(float t){
-    return QPointF( t, t );
+QPointF RenderArea::compute_cloud(float t){
+    float a=14, b=1, sign=-1;
+    float x = (a-b) * cos(t*b/a) + sign*b*cos(t* (a+b) /a);
+    float y = (a-b) * sin(t*b/a) + sign*b*sin(t* (a+b) /a);
+    return QPointF( x, y );
 }
 
 void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wenn nötig, protected+override im .h
@@ -214,7 +187,7 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
     float step = mIntervalLength / mStepCount;
     float tempInterval = mIntervalLength + step;
 
-    if(mShapeIndex == Mandel){      //mandel=test
+    if(mShapeIndex == 99){      //mandel=test
         QPointF fprevPixel = compute(0) * mScale + center;
         for (float t=0; t < tempInterval; t += step){
             QPointF fpoint = compute(t) * mScale + center;

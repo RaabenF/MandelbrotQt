@@ -9,10 +9,11 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);      //setup form
 
-    // Populate our model
+    // Populate our model of Shaplist for the scrollable Menulist
     modelShape->setStringList(ui->renderArea->ShapeList);    //string-list-model mShapeList
     ui->lvShape->setModel(modelShape);    // Glue model and view together
 
+    this->ui->renderArea->setShape(0);
     update_ui();
 }
 
@@ -60,11 +61,11 @@ void MainWindow::on_slideScale_valueChanged(int value)
 }
 void MainWindow::on_slideInterval_valueChanged(int value)
 {
-    //int-slider changes float value while casting
+    //int-slider changes float value while casting. -> Random behaviour by QT
     float temp = value/10;    //float->int
     float tempinterval = this->ui->renderArea->Interval();
             tempinterval = temp - tempinterval;
-    if(0.5< tempinterval || -0.5> tempinterval ){
+    if(0.5< tempinterval || -0.5> tempinterval ){                           //todo: fix still not working
         if(!prevent_slideCast){
             this->ui->renderArea->setInterval(temp);    //float->int, setze Slider->Interval
             update_ui();

@@ -13,20 +13,13 @@ public:
     QSize minimumSizeHint() const override; // Q_DECL_OVERRIDE; im Tutorial ist deprecated
     QSize sizeHint() const override;
 
-    enum ShapeType :int { Astroid, Cycloid, HuygensCycloid, HypoCycloid, Line, Circle, Elipse, Fancy, Star, Mandel };    //enum typ int
-    ShapeType EnumOfIndex(int i) { return static_cast<ShapeType>(i); }
-
-    QStringList ShapeList;
-
     void setBackgroundColor(QColor color) {mBackgroundColor = color; repaint();}  //setter, inline weil kurz
     QColor backgroundColor() const { return mBackgroundColor; }             //getter, const schützt die Member vor Änderungen
 
     void setShapeColor(QColor color) {mPen.setColor(color); repaint();}  //setter, inline weil kurz
     QColor ShapeColor() const { return mPen.color(); }             //getter, const schützt die Member vor Änderungen
 
-    void setShape (ShapeType shape);
-    //void setShape (QString shapename);    //geht so nicht
-    void setShape (int row);
+    int setShape (int row);
 
     void setInterval(float value) { mIntervalLength = value; repaint(); }
     float Interval() const { return mIntervalLength; }
@@ -40,16 +33,38 @@ public:
     void setCool(bool Cool) { optionCool = Cool; repaint(); }
     bool Cool() const { return optionCool; }
 
+    typedef struct name_scale_interval_steps_id{      //tag optional
+        unsigned int id;
+        QString name;//, function_name;
+        float scale, interval;//Length; //8, M_PI;
+        int steps;//Count;
+    }ShapeType;
+
+    ShapeType paramShape(
+        unsigned int id,
+        QString name,
+        float scale,
+        float interval,
+        int steps
+    );
+
+    //QList<ShapeType> shapetest;
+
+    //Menünamen:
+    QStringList ShapeList;
+
+
 protected:
     void paintEvent(QPaintEvent *event) override;
 
 signals:
 
 private:
-    QColor mBackgroundColor;
+    QList<ShapeType> shapestore;     //dynamische Qliste des structs, kann wie c array verwendet werden
+
+    QColor mBackgroundColor=Qt::darkBlue;
     QPen mPen;
-    ShapeType mShape;   //nicht mehr verwenden
-    int mShapeIndex;
+    unsigned int mShapeIndex=0;
     bool optionCool=false;
 
     float mIntervalLength, mScale;
@@ -66,8 +81,7 @@ private:
     QPointF compute_elipse(float t);
     QPointF compute_fancy(float t);
     QPointF compute_star(float t);
-    QPointF compute_mandel(float t);
-    void on_shape_changed();
+    QPointF compute_cloud(float t);
 };
 
 #endif // RENDERAREA_H
