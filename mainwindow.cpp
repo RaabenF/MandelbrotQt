@@ -62,16 +62,10 @@ void MainWindow::on_slideScale_valueChanged(int value)
 void MainWindow::on_slideInterval_valueChanged(int value)
 {
     //int-slider changes float value while casting. -> Random behaviour by QT
-    float temp = value/10;    //float->int
-    float tempinterval = this->ui->renderArea->Interval();
-            tempinterval = temp - tempinterval;
-    if(0.5< tempinterval || -0.5> tempinterval ){                           //todo: fix still not working
-        if(!prevent_slideCast){
-            this->ui->renderArea->setInterval(temp);    //float->int, setze Slider->Interval
-            update_ui();
-            prevent_slideCast = true;
-        }
-        else prevent_slideCast = false;
+    float tInterval = this->ui->renderArea->Interval() - value/10;
+    if( tInterval >=1 || tInterval <= -1 ){
+        this->ui->renderArea->setInterval(value/10);    //slider int->float auto cast
+        update_ui();
     }
 }
 

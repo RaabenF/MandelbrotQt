@@ -39,7 +39,7 @@ private:
     //Ui::MainWindow *ui;   //ist gleich:
     Ui_MainWindow *ui;
     QStringListModel *modelShape;
-    bool prevent_slideCast;
+    float lastInterval;
 
     void update_ui();
 

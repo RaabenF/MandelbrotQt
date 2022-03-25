@@ -30,7 +30,7 @@ RenderArea::RenderArea(QWidget *parent) :
     shapestore.append(paramShape(4,"Elipse",80,M_PI,128) );
     shapestore.append(paramShape(5,"Fancy",9,6*M_PI,512) );
     shapestore.append(paramShape(6,"Star",25,3*M_PI,256) );
-    shapestore.append(paramShape(7,"Cloud",10,28*M_PI,128) );
+    shapestore.append(paramShape(7,"Cloud",10,14*M_PI,128) );
     shapestore.append(paramShape(8,"tst",10,M_PI,256) );
     //shapestore.append(paramShape(,"",10,M_PI,256) );
 
