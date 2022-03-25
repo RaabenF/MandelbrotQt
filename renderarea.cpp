@@ -3,8 +3,8 @@
 #include <QPainter>
 
 RenderArea::RenderArea(QWidget *parent) :
-    QWidget(parent)//,
-    //mIntervalLength(1), mScale(1), step(1), tempInterval(1), mStepCount(8)
+    QWidget(parent),
+    mIntervalLength(1), mScale(1), mStepCount(8), optionCool(false)  //init
 {
     setBackgroundColor(Qt::darkCyan);   //hier oder in init liste, egal
     mPen.setWidth(2);
@@ -60,9 +60,9 @@ RenderArea::ShapeType RenderArea::paramShape(unsigned int id, QString name, floa
 
 int RenderArea::setShape (int row){
     if (shapestore.length()> row ){     //length starts@ 1, row @ 0
-        mShapeIndex = row;
+        mShapeIndex = row;              //or id
         mScale = shapestore[row].scale;
-        mIntervalLength = shapestore[row].interval; //2 * M_PI;
+        mIntervalLength = shapestore[row].interval;
         mStepCount = shapestore[row].steps;
         //setBackgroundColor(QColorConstants::DarkYellow);
     }
@@ -80,8 +80,6 @@ int RenderArea::setShape (int row){
 //        mStepCount = 256;
 //        setBackgroundColor(QColorConstants::DarkYellow);
 //        break;
-
-
 
 QPointF RenderArea::compute(float t){
 

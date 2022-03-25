@@ -50,8 +50,7 @@ public:
 
     //QList<ShapeType> shapetest;
 
-    //Menünamen:
-    QStringList ShapeList;
+    QStringList ShapeList;      //menu entries
 
 
 protected:
@@ -64,12 +63,11 @@ private:
 
     QColor mBackgroundColor=Qt::darkBlue;
     QPen mPen;
-    unsigned int mShapeIndex=0;
-    bool optionCool=false;
 
     float mIntervalLength, mScale;
-    float step, tempInterval;
-    int mStepCount = 256;
+    int mStepCount;
+    unsigned int mShapeIndex=0;
+    bool optionCool;
 
     QPointF compute(float t);           //dispatcher based on type
     QPointF compute_astroid(float t);
