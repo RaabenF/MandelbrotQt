@@ -4,9 +4,9 @@
 
 RenderArea::RenderArea(QWidget *parent) :
     QWidget(parent),
-    mIntervalLength(1), mScale(1), mStepCount(8), optionCool(false)  //init
+    mIntervalLength(1), mPreScale(1), mStepCount(8), optionCool(false),  //init
+    mBackgroundColor(Qt::darkBlue)
 {
-    setBackgroundColor(Qt::darkCyan);   //hier oder in init liste, egal
     mPen.setWidth(2);
     mPen.setColor(Qt::white);
 
@@ -14,7 +14,7 @@ RenderArea::RenderArea(QWidget *parent) :
 //    shapetest[0]={     //Qlist(dynamic array) - vom struct
 //                    .id=999,
 //                    .name="dfg",    //, function_name;
-//                    .scale=1,
+//                    .sPreScale=1,
 //                    .interval=1,     //Length; //8, M_PI;
 //                    .steps=1        //Count;
 //                };
@@ -23,15 +23,15 @@ RenderArea::RenderArea(QWidget *parent) :
 //    for(int i=0,i<99,i++){
 //        shapestore[i]=
 //    }
-    shapestore.append(paramShape(0,"Astroid",80,M_PI,256) );
-    shapestore.append(paramShape(1,"Cycloid",10,6 * M_PI,128) );
-    shapestore.append(paramShape(2,"HygensCycloid",32,2*M_PI,256) );
-    shapestore.append(paramShape(3,"HypoCycloid",60,M_PI,256) );
-    shapestore.append(paramShape(4,"Elipse",80,M_PI,128) );
-    shapestore.append(paramShape(5,"Fancy",9,6*M_PI,512) );
-    shapestore.append(paramShape(6,"Star",25,3*M_PI,256) );
+    shapestore.append(paramShape(0,"Astroid",73,M_PI,256) );
+    shapestore.append(paramShape(1,"Cycloid",11,6 * M_PI,128) );
+    shapestore.append(paramShape(2,"HygensCycloid",35,2*M_PI,256) );
+    shapestore.append(paramShape(3,"HypoCycloid",55,M_PI,256) );
+    shapestore.append(paramShape(4,"Elipse",100,M_PI,128) );
+    shapestore.append(paramShape(5,"Fancy",8,6*M_PI,512) );
+    shapestore.append(paramShape(6,"Star",20,3*M_PI,256) );
     shapestore.append(paramShape(7,"Cloud",10,14*M_PI,128) );
-    shapestore.append(paramShape(8,"tst",10,M_PI,256) );
+    shapestore.append(paramShape(8,"tst",30,M_PI,256) );
     //shapestore.append(paramShape(,"",10,M_PI,256) );
 
 }
@@ -44,11 +44,11 @@ QSize RenderArea::sizeHint() const {        //return the preferred size of this 
     return QSize(400,400);
 }
 
-RenderArea::ShapeType RenderArea::paramShape(unsigned int id, QString name, float scale, float interval, int steps ){
+RenderArea::ShapeType RenderArea::paramShape(unsigned int id, QString name, float preScale, float interval, int steps ){
     ShapeType sdata = {     //Qlist(dynamic array) - vom struct
          .id=id,
          .name=name,    //, function_name;
-         .scale=scale,
+         .sPreScale=preScale,
          .interval=interval,     //Length; //8, M_PI;
          .steps=steps        //Count;
     };
@@ -61,7 +61,7 @@ RenderArea::ShapeType RenderArea::paramShape(unsigned int id, QString name, floa
 int RenderArea::setShape (int row){
     if (shapestore.length()> row ){     //length starts@ 1, row @ 0
         mShapeIndex = row;              //or id
-        mScale = shapestore[row].scale;
+        mPreScale = shapestore[row].sPreScale;
         mIntervalLength = shapestore[row].interval;
         mStepCount = shapestore[row].steps;
         //setBackgroundColor(QColorConstants::DarkYellow);
@@ -75,7 +75,7 @@ int RenderArea::setShape (int row){
 }
 
 //    default:                                                //wichtig, default sollte immer gemacht werden
-//        mScale = 80;
+//        mPreScale = 80;
 //        mIntervalLength = M_PI; //2 * M_PI;
 //        mStepCount = 256;
 //        setBackgroundColor(QColorConstants::DarkYellow);
@@ -174,7 +174,7 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing, true);
 
-    painter.setBrush(mBackgroundColor );
+    painter.setBrush(mBackgroundColor );    //brush defines how shapes are filled
     painter.setPen(mPen);   //ehem mShapeColor
 
 
@@ -184,24 +184,25 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
     QPointF start = center;
     float step = mIntervalLength / mStepCount;
     float tempInterval = mIntervalLength + step;
+    float tScale = mPreScale * mScale/100;
 
     if(mShapeIndex == 99){      //mandel=test
-        QPointF fprevPixel = compute(0) * mScale + center;
+        QPointF fprevPixel = compute(0) * tScale + center;
         for (float t=0; t < tempInterval; t += step){
-            QPointF fpoint = compute(t) * mScale + center;
+            QPointF fpoint = compute(t) * tScale + center;
             if(optionCool)painter.drawLine(fpoint, start);        //effekt
             painter.drawLine(fpoint, fprevPixel);
             fprevPixel = fpoint;
         }
     }
     else{
-        QPointF fprevPixel = compute(-tempInterval) * mScale + center;
+        QPointF fprevPixel = compute(-tempInterval) * tScale + center;
         for (float t=-tempInterval; t < tempInterval + step; t += step){
-            QPointF fpoint = compute(t) * mScale + center;
+            QPointF fpoint = compute(t) * tScale + center;
             //konvertiere Float2D zu Int(Pixel)2D, unnötig
         //        QPoint pixel;
-        //        pixel.setX(fpoint.x() * mScale + center.x() );
-        //        pixel.setY(fpoint.y() * mScale + center.y() );
+        //        pixel.setX(fpoint.x() * tScale + center.x() );
+        //        pixel.setY(fpoint.y() * tScale + center.y() );
         //        painter.drawPoint(pixel);
             if(optionCool)painter.drawLine(fpoint, start);        //das war zuerst ein Fehler im Tut, als prevPixel gefehlt hat, grad übernommen
             painter.drawLine(fpoint, fprevPixel);

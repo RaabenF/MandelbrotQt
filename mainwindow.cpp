@@ -25,7 +25,7 @@ MainWindow::~MainWindow()
 void MainWindow::update_ui(){
     this->ui->spinCount->setValue(this->ui->renderArea->stepCount() );
 
-    this->ui->lcdZoom->display(this->ui->renderArea->scale() );         //scale=zoom=stepCount
+    this->ui->lcdZoom->display(this->ui->renderArea->scale() );         //scale=zoom
     this->ui->slideScale->setValue(this->ui->renderArea->scale() );
 
     this->ui->lcdInterval->display(this->ui->renderArea->Interval() );

@@ -36,14 +36,14 @@ public:
     typedef struct name_scale_interval_steps_id{      //tag optional
         unsigned int id;
         QString name;//, function_name;
-        float scale, interval;//Length; //8, M_PI;
+        float sPreScale, interval;//Length; //8, M_PI;
         int steps;//Count;
     }ShapeType;
 
     ShapeType paramShape(
         unsigned int id,
         QString name,
-        float scale,
+        float sPreScale,
         float interval,
         int steps
     );
@@ -61,11 +61,11 @@ signals:
 private:
     QList<ShapeType> shapestore;     //dynamische Qliste des structs, kann wie c array verwendet werden
 
-    QColor mBackgroundColor=Qt::darkBlue;
+    QColor mBackgroundColor;
     QPen mPen;
 
-    float mIntervalLength, mScale;
-    int mStepCount;
+    float mIntervalLength, mPreScale;
+    int mStepCount, mScale=100;
     unsigned int mShapeIndex=0;
     bool optionCool;
 
