@@ -32,8 +32,9 @@ RenderArea::RenderArea(QWidget *parent) :
     shapestore.append(paramShape(5,"Mandala",8,6*M_PI,512) );
     shapestore.append(paramShape(6,"Star",20,3*M_PI,256) );
     shapestore.append(paramShape(7,"Cloud",10,14*M_PI,128) );
-    shapestore.append(paramShape(8,"Mandel Brot",10,M_PI,256) );
-    shapestore.append(paramShape(9,"tst",30,M_PI,256) );
+    shapestore.append(paramShape(8,"Tilde",55,M_PI,256) );
+    shapestore.append(paramShape(9,"Mandel Brot",10, 3,256) );   //interval empfohlen: -3..3/y=i=-2..2
+    shapestore.append(paramShape(10,"tst",30,M_PI,256) );
     //shapestore.append(paramShape(,"",10,M_PI,256) );      //copy me
 
 }
@@ -111,6 +112,9 @@ QPointF RenderArea::compute(float t, float * pFloatIter1){
         return compute_cloud(t);
         break;
     case 8:
+        return compute_tilde(t, pFloatIter1);
+        break;
+    case 9:
         return compute_mandelb(t, pFloatIter1);
         break;
     default:
@@ -169,8 +173,11 @@ QPointF RenderArea::compute_cloud(float t){
     float y = (a-b) * sin(t*b/a) + sign*b*sin(t* (a+b) /a);
     return QPointF( x, y );
 }
+QPointF RenderArea::compute_tilde(float t,  float * pFloatIter1){
+    return QPointF( t + sin(t), 0.5*t + cos(*pFloatIter1) );
+}
 QPointF RenderArea::compute_mandelb(float t,  float * pFloatIter1){
-    return QPointF( t + sin(t* *pFloatIter1), t + cos(*pFloatIter1) );
+    return QPointF( t + sin(t), t + cos(*pFloatIter1) );
 }
 //return QPointF( t + sin(*pFloatIter1), t + cos(*pFloatIter1) );
 
@@ -186,6 +193,7 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
     painter.setPen(mPen);   //ehem mShapeColor
 
     float *pFloatIter1 = new float(1);
+    QPointF *lastFV = new QPointF(0,0);
 
     //drawing area
     painter.drawRect(this->rect() );
@@ -201,6 +209,7 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
             if(optionCool)painter.drawLine(fpoint, center);        //effekt
             painter.drawLine(fpoint, fprevPixel);
             fprevPixel = fpoint;
+
             *pFloatIter1 += 1;
         }
     }
@@ -216,6 +225,7 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
             if(optionCool)painter.drawLine(fpoint, center);        //das war zuerst ein Fehler im Tut, als prevPixel gefehlt hat, grad übernommen
             painter.drawLine(fpoint, fprevPixel);
             fprevPixel = fpoint;
+            //*lastFV
             *pFloatIter1 += 1;
         }
         //painter.drawLine(this->rect().topLeft(), this->rect().bottomRight() );

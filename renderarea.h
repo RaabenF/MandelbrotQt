@@ -33,7 +33,7 @@ public:
     void setCool(bool Cool) { optionCool = Cool; repaint(); }
     bool Cool() const { return optionCool; }
 
-    typedef struct name_scale_interval_steps_id{      //tag optional
+    typedef struct id_name_scale_interval_steps{      //tag optional
         unsigned int id;
         QString name;//, function_name;
         float sPreScale, interval;//Length; //8, M_PI;
@@ -81,6 +81,7 @@ private:
     QPointF compute_mandala(float t);
     QPointF compute_star(float t);
     QPointF compute_cloud(float t);
+    QPointF compute_tilde(float t,  float * pFloatIter1);
     QPointF compute_mandelb(float t,  float * pFloatIter1);
 };
 
