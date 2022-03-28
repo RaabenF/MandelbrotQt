@@ -83,7 +83,7 @@ int RenderArea::setShape (int row){
 //        setBackgroundColor(QColorConstants::DarkYellow);
 //        break;
 
-QPointF RenderArea::compute(float t, float * lastVal){
+QPointF RenderArea::compute(float t, float * pFloatIter1){
 
     switch(mShapeIndex){
     case 0:
@@ -111,7 +111,7 @@ QPointF RenderArea::compute(float t, float * lastVal){
         return compute_cloud(t);
         break;
     case 8:
-        return compute_mandelb(t, lastVal);
+        return compute_mandelb(t, pFloatIter1);
         break;
     default:
         return  compute_line(t);
@@ -169,9 +169,11 @@ QPointF RenderArea::compute_cloud(float t){
     float y = (a-b) * sin(t*b/a) + sign*b*sin(t* (a+b) /a);
     return QPointF( x, y );
 }
-QPointF RenderArea::compute_mandelb(float t,  float * lastVal){
-    return QPointF( t + *lastVal, t - *lastVal );
+QPointF RenderArea::compute_mandelb(float t,  float * pFloatIter1){
+    return QPointF( t + sin(t* *pFloatIter1), t + cos(*pFloatIter1) );
 }
+//return QPointF( t + sin(*pFloatIter1), t + cos(*pFloatIter1) );
+
 
 void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wenn nötig, protected+override im .h
 {
@@ -183,43 +185,43 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
     painter.setBrush(mBackgroundColor );    //brush defines how shapes are filled
     painter.setPen(mPen);   //ehem mShapeColor
 
-    float *lastFVal = new float(1);
+    float *pFloatIter1 = new float(1);
 
     //drawing area
     painter.drawRect(this->rect() );
     QPointF center = this->rect().center();     // war im tut kein floatP, ist aber egal, konvertierung erfolgt auch automatisch
-    QPointF start = center;
     float step = mIntervalLength / mStepCount;
-    float tempInterval = mIntervalLength + step;
+    float tIntervLength = mIntervalLength + step;
     float tScale = mPreScale * mScale/100;
 
     if(mShapeIndex == 99){
-        QPointF fprevPixel = compute(0, lastFVal) * tScale + center;
-        for (float t=0; t < tempInterval; t += step){
-            QPointF fpoint = compute(t, lastFVal) * tScale + center;
-            if(optionCool)painter.drawLine(fpoint, start);        //effekt
+        QPointF fprevPixel = compute(0, pFloatIter1) * tScale + center;
+        for (float t=0; t < tIntervLength; t += step){
+            QPointF fpoint = compute(t, pFloatIter1) * tScale + center;
+            if(optionCool)painter.drawLine(fpoint, center);        //effekt
             painter.drawLine(fpoint, fprevPixel);
             fprevPixel = fpoint;
-            *lastFVal += 1;
+            *pFloatIter1 += 1;
         }
     }
     else{
-        QPointF fprevPixel = compute(-tempInterval, lastFVal) * tScale + center;
-        for (float t=-tempInterval; t < tempInterval + step; t += step){
-            QPointF fpoint = compute(t, lastFVal) * tScale + center;
+        QPointF fprevPixel = compute(-tIntervLength, pFloatIter1) * tScale + center;    //first point
+        for (float t=-tIntervLength; t < tIntervLength; t += step){
+            QPointF fpoint = compute(t, pFloatIter1) * tScale + center;
             //konvertiere Float2D zu Int(Pixel)2D, unnötig
         //        QPoint pixel;
         //        pixel.setX(fpoint.x() * tScale + center.x() );
         //        pixel.setY(fpoint.y() * tScale + center.y() );
         //        painter.drawPoint(pixel);
-            if(optionCool)painter.drawLine(fpoint, start);        //das war zuerst ein Fehler im Tut, als prevPixel gefehlt hat, grad übernommen
+            if(optionCool)painter.drawLine(fpoint, center);        //das war zuerst ein Fehler im Tut, als prevPixel gefehlt hat, grad übernommen
             painter.drawLine(fpoint, fprevPixel);
             fprevPixel = fpoint;
-            *lastFVal += 1;
+            *pFloatIter1 += 1;
         }
         //painter.drawLine(this->rect().topLeft(), this->rect().bottomRight() );
     }
-    delete lastFVal;        //unnötig bei Qt?
+    delete pFloatIter1;        //unnötig bei Qt?
+    //durchläufe interval(256*2)+0+anfang+ende; 515
 
 }
 

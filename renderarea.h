@@ -69,7 +69,7 @@ private:
     unsigned int mShapeIndex=0;
     bool optionCool;
 
-    QPointF compute(float t,  float * lastVal);           //dispatcher based on type
+    QPointF compute(float t,  float * pFloatIter1);           //dispatcher based on type
 
     QPointF compute_astroid(float t);
     QPointF compute_cycloid(float t);
@@ -81,7 +81,7 @@ private:
     QPointF compute_mandala(float t);
     QPointF compute_star(float t);
     QPointF compute_cloud(float t);
-    QPointF compute_mandelb(float t,  float * lastVal);
+    QPointF compute_mandelb(float t,  float * pFloatIter1);
 };
 
 #endif // RENDERAREA_H
