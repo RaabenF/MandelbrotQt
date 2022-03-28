@@ -4,8 +4,9 @@
 
 RenderArea::RenderArea(QWidget *parent) :
     QWidget(parent),
-    mIntervalLength(1), mPreScale(1), mStepCount(8), optionCool(false),  //init
-    mBackgroundColor(Qt::darkBlue)
+      //init list:
+    mBackgroundColor(Qt::darkBlue),
+    mIntervalLength(1), mPreScale(1), mStepCount(8), optionCool(false)
 {
     mPen.setWidth(2);
     mPen.setColor(Qt::white);
@@ -28,11 +29,12 @@ RenderArea::RenderArea(QWidget *parent) :
     shapestore.append(paramShape(2,"HygensCycloid",35,2*M_PI,256) );
     shapestore.append(paramShape(3,"HypoCycloid",55,M_PI,256) );
     shapestore.append(paramShape(4,"Elipse",100,M_PI,128) );
-    shapestore.append(paramShape(5,"Fancy",8,6*M_PI,512) );
+    shapestore.append(paramShape(5,"Mandala",8,6*M_PI,512) );
     shapestore.append(paramShape(6,"Star",20,3*M_PI,256) );
     shapestore.append(paramShape(7,"Cloud",10,14*M_PI,128) );
-    shapestore.append(paramShape(8,"tst",30,M_PI,256) );
-    //shapestore.append(paramShape(,"",10,M_PI,256) );
+    shapestore.append(paramShape(8,"Mandel Brot",10,M_PI,256) );
+    shapestore.append(paramShape(9,"tst",30,M_PI,256) );
+    //shapestore.append(paramShape(,"",10,M_PI,256) );      //copy me
 
 }
 
@@ -81,7 +83,7 @@ int RenderArea::setShape (int row){
 //        setBackgroundColor(QColorConstants::DarkYellow);
 //        break;
 
-QPointF RenderArea::compute(float t){
+QPointF RenderArea::compute(float t, float * lastVal){
 
     switch(mShapeIndex){
     case 0:
@@ -100,13 +102,16 @@ QPointF RenderArea::compute(float t){
         return compute_elipse(t);
         break;
     case 5:
-        return compute_fancy(t);
+        return compute_mandala(t);
         break;
     case 6:
         return compute_star(t);
         break;
     case 7:
         return compute_cloud(t);
+        break;
+    case 8:
+        return compute_mandelb(t, lastVal);
         break;
     default:
         return  compute_line(t);
@@ -117,29 +122,27 @@ QPointF RenderArea::compute(float t){
 
 
 QPointF RenderArea::compute_astroid(float t){
-    float cos_t = cos(t);
-    float sin_t = sin(t);
-    float x = 2 * pow(cos_t,3);
-    float y = 2 * pow(sin_t,3);
+    float x = 2 * pow(cos(t),3);
+    float y = 2 * pow(sin(t),3);
 
     return QPointF(x,y);
 }
 QPointF RenderArea::compute_cycloid(float t){
     return QPointF(
-                (t-sin(t)),    //Y -> getauscht
-                (1+cos(t))     //X
+                (t-sin(t)),    //X
+                (1+cos(t))     //Y
     );
 }
 QPointF RenderArea::compute_huygens(float t){
     return QPointF(
-                (3*cos(t) - cos(3*t)),    //X
-                (3*sin(t) - sin(3*t))     //Y
+                (3*cos(t) - cos(3*t)),
+                (3*sin(t) - sin(3*t))
     );
 }
 QPointF RenderArea::compute_hypo(float t){
     return QPointF(
-                (2*cos(t) + cos(2*t)),  //X
-                (2*sin(t) - sin(2*t))   //Y
+                (2*cos(t) + cos(2*t)),
+                (2*sin(t) - sin(2*t))
     );
 }
 QPointF RenderArea::compute_line(float t){
@@ -151,7 +154,7 @@ QPointF RenderArea::compute_circle(float t){
 QPointF RenderArea::compute_elipse(float t){
     return QPointF( 2*cos(t), sin(t) );
 }
-QPointF RenderArea::compute_fancy(float t){
+QPointF RenderArea::compute_mandala(float t){
     return QPointF( 11.0*cos(t) - 6.0*cos(11.0/6.0*t),      //ohne komma rechnet er tatsächlich in INT!!! trotz cos
                     11.0*sin(t) - 6.0*sin(11.0/6.0*t) );
 }
@@ -166,6 +169,9 @@ QPointF RenderArea::compute_cloud(float t){
     float y = (a-b) * sin(t*b/a) + sign*b*sin(t* (a+b) /a);
     return QPointF( x, y );
 }
+QPointF RenderArea::compute_mandelb(float t,  float * lastVal){
+    return QPointF( t + *lastVal, t - *lastVal );
+}
 
 void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wenn nötig, protected+override im .h
 {
@@ -177,6 +183,7 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
     painter.setBrush(mBackgroundColor );    //brush defines how shapes are filled
     painter.setPen(mPen);   //ehem mShapeColor
 
+    float *lastFVal = new float(1);
 
     //drawing area
     painter.drawRect(this->rect() );
@@ -186,19 +193,20 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
     float tempInterval = mIntervalLength + step;
     float tScale = mPreScale * mScale/100;
 
-    if(mShapeIndex == 99){      //mandel=test
-        QPointF fprevPixel = compute(0) * tScale + center;
+    if(mShapeIndex == 99){
+        QPointF fprevPixel = compute(0, lastFVal) * tScale + center;
         for (float t=0; t < tempInterval; t += step){
-            QPointF fpoint = compute(t) * tScale + center;
+            QPointF fpoint = compute(t, lastFVal) * tScale + center;
             if(optionCool)painter.drawLine(fpoint, start);        //effekt
             painter.drawLine(fpoint, fprevPixel);
             fprevPixel = fpoint;
+            *lastFVal += 1;
         }
     }
     else{
-        QPointF fprevPixel = compute(-tempInterval) * tScale + center;
+        QPointF fprevPixel = compute(-tempInterval, lastFVal) * tScale + center;
         for (float t=-tempInterval; t < tempInterval + step; t += step){
-            QPointF fpoint = compute(t) * tScale + center;
+            QPointF fpoint = compute(t, lastFVal) * tScale + center;
             //konvertiere Float2D zu Int(Pixel)2D, unnötig
         //        QPoint pixel;
         //        pixel.setX(fpoint.x() * tScale + center.x() );
@@ -207,9 +215,12 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
             if(optionCool)painter.drawLine(fpoint, start);        //das war zuerst ein Fehler im Tut, als prevPixel gefehlt hat, grad übernommen
             painter.drawLine(fpoint, fprevPixel);
             fprevPixel = fpoint;
+            *lastFVal += 1;
         }
         //painter.drawLine(this->rect().topLeft(), this->rect().bottomRight() );
     }
+    delete lastFVal;        //unnötig bei Qt?
+
 }
 
 
