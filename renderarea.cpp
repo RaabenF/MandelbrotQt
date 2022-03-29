@@ -1,7 +1,6 @@
 #include "renderarea.h"
 #include <QPaintEvent>
 #include <QPainter>
-#include <complex>
 
 RenderArea::RenderArea(QWidget *parent) :
     QWidget(parent),
@@ -98,7 +97,7 @@ unsigned int RenderArea::getShapeIDbyName(QString name){
 }
 
 
-QPointF RenderArea::compute(float t, float * pFloatIter1){
+QPointF RenderArea::compute(float t, float * pFloatIter1, std::complex<double> *compval){
 
     switch(mShapeIndex){
     case 0:
@@ -129,7 +128,7 @@ QPointF RenderArea::compute(float t, float * pFloatIter1){
         return compute_tilde(t, pFloatIter1);
         break;
     case 9:
-        return compute_mandelb(t, pFloatIter1);
+        return compute_mandelb(t, pFloatIter1, compval);
         break;
     default:
         return  compute_line(t);
@@ -190,12 +189,16 @@ QPointF RenderArea::compute_cloud(float t){
 QPointF RenderArea::compute_tilde(float t,  float * pFloatIter1){
     return QPointF( t + sin(t), 0.5*t + cos(*pFloatIter1) );
 }
-QPointF RenderArea::compute_mandelb(float t,  float * pFloatIter1){
-    //QOpcUaDoubleComplexNumber comp = 0;
+QPointF RenderArea::compute_mandelb(float t,  float * pFloatIter1, std::complex<double> *lastXval){
+    //std::complex<double> Xval(1,1);      //include <complex>
+    *lastXval = std::complex<double>(t, *pFloatIter1);
+
     // x1 =  (x0)² + c
-    std::complex<double> Zval(1,1);      //include <complex>
-    return QPointF( t + sin(t), t + cos(*pFloatIter1) );
+    *lastXval = ( *lastXval * *lastXval );  // +C = +0
+
+    return QPointF( lastXval->real(), lastXval->imag() );
 }
+
 //return QPointF( t + sin(*pFloatIter1), t + cos(*pFloatIter1) );
 
 
@@ -203,7 +206,7 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
 {
     Q_UNUSED(event);        //deaktiviert Kompilerwarnung
 
-    if(mShapeIndex == getShapeIDbyName("Mandel Brot") ){
+    if(mShapeIndex == getShapeIDbyName("mandel brot") ){
         mPen.setWidth(1);
         mPen.setColor(Qt::blue);
     }
@@ -219,7 +222,8 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
     painter.setPen(mPen);   //ehem mShapeColor
 
     float *pFloatIter1 = new float(1);
-    QPointF *lastFV = new QPointF(0,0);
+    //QPointF *lastFV = new QPointF(0,0);
+    std::complex<double> *lastXval = new std::complex<double>(1,1);      //include <complex>
 
     //drawing area
     painter.drawRect(this->rect() );
@@ -228,22 +232,21 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
     float tIntervLength = mIntervalLength + step;
     float tScale = mPreScale * mScale/100;
 
+    //painter.drawLine(this->rect().topLeft(), this->rect().bottomRight() );
+    //for (float t=0; t < tIntervLength; t += step){
 
-    if(mShapeIndex == 99){
-        QPointF fprevPixel = compute(0, pFloatIter1) * tScale + center;
-        for (float t=0; t < tIntervLength; t += step){
-            QPointF fpoint = compute(t, pFloatIter1) * tScale + center;
-            if(optionCool)painter.drawLine(fpoint, center);        //effekt
-            painter.drawLine(fpoint, fprevPixel);
-            fprevPixel = fpoint;
+    QPointF fprevPixel = compute(-tIntervLength, pFloatIter1, lastXval) * tScale + center;    //first point
 
-            *pFloatIter1 += 1;
-        }
+    float t2=-tIntervLength;
+    if(mShapeIndex == getShapeIDbyName("mandel brot") ){
+        t2= t2*2/3;
     }
     else{
-        QPointF fprevPixel = compute(-tIntervLength, pFloatIter1) * tScale + center;    //first point
+        t2= tIntervLength-step;
+    }
+    while(t2 < tIntervLength){
         for (float t=-tIntervLength; t < tIntervLength; t += step){
-            QPointF fpoint = compute(t, pFloatIter1) * tScale + center;
+            QPointF fpoint = compute(t, &t2, lastXval) * tScale + center;
             //konvertiere Float2D zu Int(Pixel)2D, unnötig
         //        QPoint pixel;
         //        pixel.setX(fpoint.x() * tScale + center.x() );
@@ -255,10 +258,12 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
             //*lastFV
             *pFloatIter1 += 1;
         }
-        //painter.drawLine(this->rect().topLeft(), this->rect().bottomRight() );
+        t2 += step;
     }
+
     delete pFloatIter1;
-    delete lastFV;        //unnötig bei Qt?
+    //delete lastFV;        //unnötig bei Qt?
+    delete lastXval;
     //durchläufe for() interval(256*2)+0+anfang+ende; 515
     //GESAMT DURCHLÄUFE 5, evtl wegen oversampling?
 }

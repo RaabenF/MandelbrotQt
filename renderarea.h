@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include <QPen>
+#include <complex>
 
 class RenderArea : public QWidget
 {
@@ -71,7 +72,7 @@ private:
     unsigned int mShapeIndex=0;
     bool optionCool;
 
-    QPointF compute(float t,  float * pFloatIter1);           //dispatcher based on type
+    QPointF compute(float t,  float * pFloatIter1, std::complex<double> *lastXval);           //dispatcher based on type
 
     QPointF compute_astroid(float t);
     QPointF compute_cycloid(float t);
@@ -84,7 +85,7 @@ private:
     QPointF compute_star(float t);
     QPointF compute_cloud(float t);
     QPointF compute_tilde(float t,  float * pFloatIter1);
-    QPointF compute_mandelb(float t,  float * pFloatIter1);
+    QPointF compute_mandelb(float t,  float * pFloatIter1, std::complex<double> *lastXval);
 };
 
 #endif // RENDERAREA_H
