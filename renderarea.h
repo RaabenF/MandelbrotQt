@@ -19,7 +19,7 @@ public:
     void setShapeColor(QColor color) {mPen.setColor(color); repaint();}  //setter, inline weil kurz
     QColor ShapeColor() const { return mPen.color(); }             //getter, const schützt die Member vor Änderungen
 
-    int setShape (int row);
+    unsigned int setShape (unsigned row);
 
     void setInterval(float value) { mIntervalLength = value; repaint(); }
     float Interval() const { return mIntervalLength; }
@@ -33,10 +33,12 @@ public:
     void setCool(bool Cool) { optionCool = Cool; repaint(); }
     bool Cool() const { return optionCool; }
 
+    unsigned int getShapeIDbyName(QString name);
+
     typedef struct id_name_scale_interval_steps{      //tag optional
         unsigned int id;
         QString name;//, function_name;
-        float sPreScale, interval;//Length; //8, M_PI;
+        float prescale, interval;//Length; //8, M_PI;
         int steps;//Count;
     }ShapeType;
 

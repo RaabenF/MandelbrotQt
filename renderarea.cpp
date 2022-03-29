@@ -1,6 +1,7 @@
 #include "renderarea.h"
 #include <QPaintEvent>
 #include <QPainter>
+#include <complex>
 
 RenderArea::RenderArea(QWidget *parent) :
     QWidget(parent),
@@ -51,7 +52,7 @@ RenderArea::ShapeType RenderArea::paramShape(unsigned int id, QString name, floa
     ShapeType sdata = {     //Qlist(dynamic array) - vom struct
          .id=id,
          .name=name,    //, function_name;
-         .sPreScale=preScale,
+         .prescale=preScale,
          .interval=interval,     //Length; //8, M_PI;
          .steps=steps        //Count;
     };
@@ -61,12 +62,16 @@ RenderArea::ShapeType RenderArea::paramShape(unsigned int id, QString name, floa
     return sdata;
 }
 
-int RenderArea::setShape (int row){
-    if (shapestore.length()> row ){     //length starts@ 1, row @ 0
-        mShapeIndex = row;              //or id
-        mPreScale = shapestore[row].sPreScale;
-        mIntervalLength = shapestore[row].interval;
-        mStepCount = shapestore[row].steps;
+unsigned int RenderArea::setShape (unsigned int row){
+    if (shapestore.length() > row ){    //length starts@ 1, row @ 0
+        if(row == shapestore[row].id) mShapeIndex = row;              //or id
+        else{
+            qDebug("shapestore ID failure");
+            mShapeIndex = 0;
+        }
+        mPreScale = shapestore[mShapeIndex].prescale;
+        mIntervalLength = shapestore[mShapeIndex].interval;
+        mStepCount = shapestore[mShapeIndex].steps;
         //setBackgroundColor(QColorConstants::DarkYellow);
     }
     else{
@@ -76,13 +81,22 @@ int RenderArea::setShape (int row){
     repaint();
     return 0;
 }
-
 //    default:                                                //wichtig, default sollte immer gemacht werden
 //        mPreScale = 80;
 //        mIntervalLength = M_PI; //2 * M_PI;
 //        mStepCount = 256;
 //        setBackgroundColor(QColorConstants::DarkYellow);
 //        break;
+
+unsigned int RenderArea::getShapeIDbyName(QString name){
+    for (int i=0; shapestore.length() > i; i++ ){    //length starts@ 1, row @ 0
+        if(!shapestore[i].name.compare(name,Qt::CaseInsensitive) ) {
+            return shapestore[i].id;
+        }
+    }
+    return 0;
+}
+
 
 QPointF RenderArea::compute(float t, float * pFloatIter1){
 
@@ -177,6 +191,9 @@ QPointF RenderArea::compute_tilde(float t,  float * pFloatIter1){
     return QPointF( t + sin(t), 0.5*t + cos(*pFloatIter1) );
 }
 QPointF RenderArea::compute_mandelb(float t,  float * pFloatIter1){
+    //QOpcUaDoubleComplexNumber comp = 0;
+    // x1 =  (x0)² + c
+    std::complex<double> Zval(1,1);      //include <complex>
     return QPointF( t + sin(t), t + cos(*pFloatIter1) );
 }
 //return QPointF( t + sin(*pFloatIter1), t + cos(*pFloatIter1) );
@@ -185,6 +202,15 @@ QPointF RenderArea::compute_mandelb(float t,  float * pFloatIter1){
 void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wenn nötig, protected+override im .h
 {
     Q_UNUSED(event);        //deaktiviert Kompilerwarnung
+
+    if(mShapeIndex == getShapeIDbyName("Mandel Brot") ){
+        mPen.setWidth(1);
+        mPen.setColor(Qt::blue);
+    }
+    else {
+        mPen.setWidth(2);
+        mPen.setColor(Qt::white);
+    }
 
     QPainter painter(this);
     painter.setRenderHint(QPainter::Antialiasing, true);
@@ -201,6 +227,7 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
     float step = mIntervalLength / mStepCount;
     float tIntervLength = mIntervalLength + step;
     float tScale = mPreScale * mScale/100;
+
 
     if(mShapeIndex == 99){
         QPointF fprevPixel = compute(0, pFloatIter1) * tScale + center;
@@ -230,9 +257,10 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
         }
         //painter.drawLine(this->rect().topLeft(), this->rect().bottomRight() );
     }
-    delete pFloatIter1;        //unnötig bei Qt?
-    //durchläufe interval(256*2)+0+anfang+ende; 515
-
+    delete pFloatIter1;
+    delete lastFV;        //unnötig bei Qt?
+    //durchläufe for() interval(256*2)+0+anfang+ende; 515
+    //GESAMT DURCHLÄUFE 5, evtl wegen oversampling?
 }
 
 
