@@ -192,16 +192,18 @@ QPointF RenderArea::compute_tilde(float x,  float y){
 QPointF RenderArea::compute_mandelb(float x,  float y){  //, std::complex<double> *lastXval){
     //*lastXval = std::complex<double>(x, y);     //equals the Complex Number real=t * 1imag        #include <complex>
     std::complex<double> Xval(x,y);
+    std::complex<double> Cval(1,1);
 
     // X1 =  (X0)² + C
     for(int i=0; i<1; i++){
         //*lastCval = ( *lastCval * *lastCval );
         //Xval *= Xval;
         //*lastCval *= Xval;
-        Xval *= Xval;  //this is  +C
+        Xval *= Xval;   // X²
+        Xval += Cval;  //+ C
     }
 
-    QPointF endv( x, Xval.real() );    //, lastCval->imag() );
+    QPointF endv( Xval.real(), Xval.imag()  );    //return Complex Value in fpoint
     //qDebug() << endv.x() << endv.y();
     return endv;
 }
@@ -238,8 +240,6 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
     float tIntervLength = mIntervalLength + step;
     float tScale = mPreScale * mScale/100;
 
-    float *pFloatIter1 = new float(0);
-    //QPointF *lastFV = new QPointF(0,0);
     //std::complex<double> *complVal = new std::complex<double>(1,1);      //include <complex>
 
     //painter.drawLine(this->rect().topLeft(), this->rect().bottomRight() );
@@ -257,24 +257,26 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
     for(float y = ystart; y < tIntervLength; y++){
         for (float x=-tIntervLength; x < tIntervLength; x += step){
 
-            QPointF fpoint = compute(x, y) * tScale + center;
             if(drawLine){
+                QPointF fpoint = compute(x, y) * tScale + center;
+
                 if(optionCool)painter.drawLine(fpoint, center);        //das war zuerst ein Fehler im Tut, als prevPixel gefehlt hat, grad übernommen
                 painter.drawLine(fpoint, fprevPixel);
                 fprevPixel = fpoint;
             }
-            else{   //konvertiere Float2D zu Int(Pixel)2D, unnötig
+            else{
+                QPointF fpoint = compute(x, y) * tScale + center;
+                //konvertiere Float2D zu Int(Pixel)2D, unnötig
                 //        QPoint pixel;
                 //        pixel.setX(fpoint.x() * tScale + center.x() );
                 //        pixel.setY(fpoint.y() * tScale + center.y() );
+                mPen.setColor(fpoint.x() );
+                qDebug() << fpoint;
+                painter.setPen(mPen);
                 painter.drawPoint(fpoint);   //pixel);
             }
-            //*lastFV
-            *pFloatIter1 += 1;
         }
     }
-
-    delete pFloatIter1;        //unnötig bei Qt?
     //durchläufe for() interval(256*2)+0+anfang+ende; 515
     //GESAMT DURCHLÄUFE 5, evtl wegen oversampling? -> ohne antialiasing 4
 }
