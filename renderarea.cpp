@@ -50,10 +50,10 @@ QSize RenderArea::sizeHint() const {        //return the preferred size of this 
 RenderArea::ShapeType RenderArea::paramShape(unsigned int id, QString name, float preScale, float interval, int steps ){
     ShapeType sdata = {     //Qlist(dynamic array) - vom struct
          .id=id,
-         .name=name,    //, function_name;
+         .name=name,            //, function_name;
          .prescale=preScale,
-         .interval=interval,     //Length; //8, M_PI;
-         .steps=steps        //Count;
+         .interval=interval,    //Length; //8, M_PI;
+         .steps=steps           //Count;
     };
     //alt (convenience) menüliste:
     ShapeList.append(name);
@@ -189,14 +189,20 @@ QPointF RenderArea::compute_cloud(float t){
 QPointF RenderArea::compute_tilde(float t,  float * pFloatIter1){
     return QPointF( t + sin(t), 0.5*t + cos(*pFloatIter1) );
 }
-QPointF RenderArea::compute_mandelb(float t,  float * pFloatIter1, std::complex<double> *lastXval){
-    //std::complex<double> Xval(1,1);      //include <complex>
-    *lastXval = std::complex<double>(t, *pFloatIter1);
+QPointF RenderArea::compute_mandelb(float t,  float * pFloatIter1, std::complex<double> *lastCval){
+    std::complex<double> Xval(t,1);      //include <complex>
 
-    // x1 =  (x0)² + c
-    *lastXval = ( *lastXval * *lastXval );  // +C = +0
+    //*lastCval = std::complex<double>(t, 1);     //equals the Complex Number real=t * 1imag
+    // x1 =  (x0)² + C
+    for(int i=0; i<1; i++){
+        //*lastCval = ( *lastCval * *lastCval );
+        Xval *= Xval;
+        *lastCval *= Xval;  //this is  +C
+    }
 
-    return QPointF( lastXval->real(), lastXval->imag() );
+    QPointF endv( t, lastCval->real() );    //, lastCval->imag() );
+    //qDebug() << endv.x() << endv.y();
+    return endv;
 }
 
 //return QPointF( t + sin(*pFloatIter1), t + cos(*pFloatIter1) );
@@ -206,24 +212,23 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
 {
     Q_UNUSED(event);        //deaktiviert Kompilerwarnung
 
+    QPainter painter(this);
+
+    bool drawLine = true;   //default true
     if(mShapeIndex == getShapeIDbyName("mandel brot") ){
+        drawLine = false;
+        painter.setRenderHint(QPainter::Antialiasing, false);
         mPen.setWidth(1);
         mPen.setColor(Qt::blue);
     }
     else {
+        painter.setRenderHint(QPainter::Antialiasing, true);
         mPen.setWidth(2);
         mPen.setColor(Qt::white);
     }
-
-    QPainter painter(this);
-    painter.setRenderHint(QPainter::Antialiasing, true);
-
     painter.setBrush(mBackgroundColor );    //brush defines how shapes are filled
     painter.setPen(mPen);   //ehem mShapeColor
 
-    float *pFloatIter1 = new float(1);
-    //QPointF *lastFV = new QPointF(0,0);
-    std::complex<double> *lastXval = new std::complex<double>(1,1);      //include <complex>
 
     //drawing area
     painter.drawRect(this->rect() );
@@ -232,29 +237,38 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
     float tIntervLength = mIntervalLength + step;
     float tScale = mPreScale * mScale/100;
 
+    float *pFloatIter1 = new float(0);
+    //QPointF *lastFV = new QPointF(0,0);
+    std::complex<double> *lastCval = new std::complex<double>(0,0);      //include <complex>
+
     //painter.drawLine(this->rect().topLeft(), this->rect().bottomRight() );
     //for (float t=0; t < tIntervLength; t += step){
 
-    QPointF fprevPixel = compute(-tIntervLength, pFloatIter1, lastXval) * tScale + center;    //first point
 
     float t2=-tIntervLength;
-    if(mShapeIndex == getShapeIDbyName("mandel brot") ){
-        t2= t2*2/3;
+    if (drawLine){
+        t2= tIntervLength - step;
     }
     else{
-        t2= tIntervLength-step;
+        t2= t2*2/3;
     }
+    QPointF fprevPixel = compute(-tIntervLength, &t2, lastCval) * tScale + center;    //first point
     while(t2 < tIntervLength){
         for (float t=-tIntervLength; t < tIntervLength; t += step){
-            QPointF fpoint = compute(t, &t2, lastXval) * tScale + center;
-            //konvertiere Float2D zu Int(Pixel)2D, unnötig
-        //        QPoint pixel;
-        //        pixel.setX(fpoint.x() * tScale + center.x() );
-        //        pixel.setY(fpoint.y() * tScale + center.y() );
-        //        painter.drawPoint(pixel);
-            if(optionCool)painter.drawLine(fpoint, center);        //das war zuerst ein Fehler im Tut, als prevPixel gefehlt hat, grad übernommen
-            painter.drawLine(fpoint, fprevPixel);
-            fprevPixel = fpoint;
+            QPointF fpoint = compute(t, &t2, lastCval) * tScale + center;
+
+
+            if(drawLine){
+                if(optionCool)painter.drawLine(fpoint, center);        //das war zuerst ein Fehler im Tut, als prevPixel gefehlt hat, grad übernommen
+                painter.drawLine(fpoint, fprevPixel);
+                fprevPixel = fpoint;
+            }
+            else{   //konvertiere Float2D zu Int(Pixel)2D, unnötig
+                //        QPoint pixel;
+                //        pixel.setX(fpoint.x() * tScale + center.x() );
+                //        pixel.setY(fpoint.y() * tScale + center.y() );
+                painter.drawPoint(fpoint);   //pixel);
+            }
             //*lastFV
             *pFloatIter1 += 1;
         }
@@ -263,7 +277,7 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
 
     delete pFloatIter1;
     //delete lastFV;        //unnötig bei Qt?
-    delete lastXval;
+    delete lastCval;
     //durchläufe for() interval(256*2)+0+anfang+ende; 515
     //GESAMT DURCHLÄUFE 5, evtl wegen oversampling?
 }
