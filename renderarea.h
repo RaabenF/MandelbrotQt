@@ -72,20 +72,20 @@ private:
     unsigned int mShapeIndex=0;
     bool optionCool;
 
-    QPointF compute(float t,  float * pFloatIter1, std::complex<double> *lastCval);           //dispatcher based on type
+    QPointF compute(float x,  float y);           //dispatcher based on type
 
-    QPointF compute_astroid(float t);
-    QPointF compute_cycloid(float t);
-    QPointF compute_huygens(float t);
-    QPointF compute_hypo(float t);
-    QPointF compute_line(float t);
-    QPointF compute_circle(float t);
-    QPointF compute_elipse(float t);
-    QPointF compute_mandala(float t);
-    QPointF compute_star(float t);
-    QPointF compute_cloud(float t);
-    QPointF compute_tilde(float t,  float * pFloatIter1);
-    QPointF compute_mandelb(float t,  float * pFloatIter1, std::complex<double> *lastCval);
+    QPointF compute_astroid(float x);
+    QPointF compute_cycloid(float x);
+    QPointF compute_huygens(float x);
+    QPointF compute_hypo(float x);
+    QPointF compute_line(float x);
+    QPointF compute_circle(float x);
+    QPointF compute_elipse(float x);
+    QPointF compute_mandala(float x);
+    QPointF compute_star(float x);
+    QPointF compute_cloud(float x);
+    QPointF compute_tilde(float x,  float y);
+    QPointF compute_mandelb(float x,  float y);
 };
 
 #endif // RENDERAREA_H

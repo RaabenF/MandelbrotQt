@@ -97,110 +97,111 @@ unsigned int RenderArea::getShapeIDbyName(QString name){
 }
 
 
-QPointF RenderArea::compute(float t, float * pFloatIter1, std::complex<double> *compval){
+QPointF RenderArea::compute(float x, float y){
 
     switch(mShapeIndex){
     case 0:
-        return compute_astroid(t);
+        return compute_astroid(x);
         break;
     case 1:
-        return compute_cycloid(t);
+        return compute_cycloid(x);
         break;
     case 2:
-        return  compute_huygens(t);
+        return  compute_huygens(x);
         break;
     case 3:
-        return  compute_hypo(t);
+        return  compute_hypo(x);
         break;
     case 4:
-        return compute_elipse(t);
+        return compute_elipse(x);
         break;
     case 5:
-        return compute_mandala(t);
+        return compute_mandala(x);
         break;
     case 6:
-        return compute_star(t);
+        return compute_star(x);
         break;
     case 7:
-        return compute_cloud(t);
+        return compute_cloud(x);
         break;
     case 8:
-        return compute_tilde(t, pFloatIter1);
+        return compute_tilde(x, y);
         break;
     case 9:
-        return compute_mandelb(t, pFloatIter1, compval);
+        return compute_mandelb(x, y);
         break;
     default:
-        return  compute_line(t);
+        return  compute_line(x);
         break;
     }
     return QPointF(0,0);
 }
 
 
-QPointF RenderArea::compute_astroid(float t){
-    float x = 2 * pow(cos(t),3);
-    float y = 2 * pow(sin(t),3);
+QPointF RenderArea::compute_astroid(float x){
+    float xout = 2 * pow(cos(x),3);
+    float yout = 2 * pow(sin(x),3);
 
-    return QPointF(x,y);
+    return QPointF(xout,yout);
 }
-QPointF RenderArea::compute_cycloid(float t){
+QPointF RenderArea::compute_cycloid(float x){
     return QPointF(
-                (t-sin(t)),    //X
-                (1+cos(t))     //Y
+                (x-sin(x)),    //X
+                (1+cos(x))     //Y
     );
 }
-QPointF RenderArea::compute_huygens(float t){
+QPointF RenderArea::compute_huygens(float x){
     return QPointF(
-                (3*cos(t) - cos(3*t)),
-                (3*sin(t) - sin(3*t))
+                (3*cos(x) - cos(3*x)),
+                (3*sin(x) - sin(3*x))
     );
 }
-QPointF RenderArea::compute_hypo(float t){
+QPointF RenderArea::compute_hypo(float x){
     return QPointF(
-                (2*cos(t) + cos(2*t)),
-                (2*sin(t) - sin(2*t))
+                (2*cos(x) + cos(2*x)),
+                (2*sin(x) - sin(2*x))
     );
 }
-QPointF RenderArea::compute_line(float t){
-    return QPointF( t, t );
+QPointF RenderArea::compute_line(float x){
+    return QPointF( x, x );
 }
-QPointF RenderArea::compute_circle(float t){
-    return QPointF( cos(t), sin(t) );
+QPointF RenderArea::compute_circle(float x){
+    return QPointF( cos(x), sin(x) );
 }
-QPointF RenderArea::compute_elipse(float t){
-    return QPointF( 2*cos(t), sin(t) );
+QPointF RenderArea::compute_elipse(float x){
+    return QPointF( 2*cos(x), sin(x) );
 }
-QPointF RenderArea::compute_mandala(float t){
-    return QPointF( 11.0*cos(t) - 6.0*cos(11.0/6.0*t),      //ohne komma rechnet er tatsächlich in INT!!! trotz cos
-                    11.0*sin(t) - 6.0*sin(11.0/6.0*t) );
+QPointF RenderArea::compute_mandala(float x){
+    return QPointF( 11.0*cos(x) - 6.0*cos(11.0/6.0*x),      //ohne komma rechnet er tatsächlich in INT!!! trotz cos
+                    11.0*sin(x) - 6.0*sin(11.0/6.0*x) );
 }
-QPointF RenderArea::compute_star(float t){
+QPointF RenderArea::compute_star(float x){
     const float R=5, r=3, d=5;
-    return QPointF( (R-r)*cos(t) + d*cos(t*((R-r)/r) ),
-                    (R-r)*sin(t) - d*sin(t*((R-r)/r) ) );
+    return QPointF( (R-r)*cos(x) + d*cos(x*((R-r)/r) ),
+                    (R-r)*sin(x) - d*sin(x*((R-r)/r) ) );
 }
-QPointF RenderArea::compute_cloud(float t){
+QPointF RenderArea::compute_cloud(float x){
     float a=14, b=1, sign=-1;
-    float x = (a-b) * cos(t*b/a) + sign*b*cos(t* (a+b) /a);
-    float y = (a-b) * sin(t*b/a) + sign*b*sin(t* (a+b) /a);
-    return QPointF( x, y );
+    float xout = (a-b) * cos(x*b/a) + sign*b*cos(x* (a+b) /a);
+    float yout = (a-b) * sin(x*b/a) + sign*b*sin(x* (a+b) /a);
+    return QPointF( xout, yout );
 }
-QPointF RenderArea::compute_tilde(float t,  float * pFloatIter1){
-    return QPointF( t + sin(t), 0.5*t + cos(*pFloatIter1) );
+QPointF RenderArea::compute_tilde(float x,  float y){
+    return QPointF( x + sin(x), 0.5*x + cos(y) );
 }
-QPointF RenderArea::compute_mandelb(float t,  float * pFloatIter1, std::complex<double> *lastCval){
-    std::complex<double> Xval(t,1);      //include <complex>
+QPointF RenderArea::compute_mandelb(float x,  float y){  //, std::complex<double> *lastXval){
+    //*lastXval = std::complex<double>(x, y);     //equals the Complex Number real=t * 1imag        #include <complex>
+    std::complex<double> Xval(x,y);
 
-    //*lastCval = std::complex<double>(t, 1);     //equals the Complex Number real=t * 1imag
-    // x1 =  (x0)² + C
+    // X1 =  (X0)² + C
     for(int i=0; i<1; i++){
         //*lastCval = ( *lastCval * *lastCval );
-        Xval *= Xval;
-        *lastCval *= Xval;  //this is  +C
+        //Xval *= Xval;
+        //*lastCval *= Xval;
+        Xval *= Xval;  //this is  +C
     }
 
-    QPointF endv( t, lastCval->real() );    //, lastCval->imag() );
+    QPointF endv( x, Xval.real() );    //, lastCval->imag() );
     //qDebug() << endv.x() << endv.y();
     return endv;
 }
@@ -239,25 +240,24 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
 
     float *pFloatIter1 = new float(0);
     //QPointF *lastFV = new QPointF(0,0);
-    std::complex<double> *lastCval = new std::complex<double>(0,0);      //include <complex>
+    //std::complex<double> *complVal = new std::complex<double>(1,1);      //include <complex>
 
     //painter.drawLine(this->rect().topLeft(), this->rect().bottomRight() );
     //for (float t=0; t < tIntervLength; t += step){
 
 
-    float t2=-tIntervLength;
+    float ystart=-tIntervLength;
     if (drawLine){
-        t2= tIntervLength - step;
+        ystart = tIntervLength - step;    //positiv -> only one step for y-axis
     }
     else{
-        t2= t2*2/3;
+        ystart = ystart * 2/3;
     }
-    QPointF fprevPixel = compute(-tIntervLength, &t2, lastCval) * tScale + center;    //first point
-    while(t2 < tIntervLength){
-        for (float t=-tIntervLength; t < tIntervLength; t += step){
-            QPointF fpoint = compute(t, &t2, lastCval) * tScale + center;
+    QPointF fprevPixel = compute(-tIntervLength, ystart) * tScale + center;    //first point
+    for(float y = ystart; y < tIntervLength; y++){
+        for (float x=-tIntervLength; x < tIntervLength; x += step){
 
-
+            QPointF fpoint = compute(x, y) * tScale + center;
             if(drawLine){
                 if(optionCool)painter.drawLine(fpoint, center);        //das war zuerst ein Fehler im Tut, als prevPixel gefehlt hat, grad übernommen
                 painter.drawLine(fpoint, fprevPixel);
@@ -272,14 +272,11 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
             //*lastFV
             *pFloatIter1 += 1;
         }
-        t2 += step;
     }
 
-    delete pFloatIter1;
-    //delete lastFV;        //unnötig bei Qt?
-    delete lastCval;
+    delete pFloatIter1;        //unnötig bei Qt?
     //durchläufe for() interval(256*2)+0+anfang+ende; 515
-    //GESAMT DURCHLÄUFE 5, evtl wegen oversampling?
+    //GESAMT DURCHLÄUFE 5, evtl wegen oversampling? -> ohne antialiasing 4
 }
 
 
