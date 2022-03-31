@@ -8,8 +8,8 @@ RenderArea::RenderArea(QWidget *parent) :
     mBackgroundColor(Qt::darkBlue),
     mIntervalLength(1), mPreScale(1), mStepCount(8), optionCool(false)
 {
-    mPen.setWidth(2);
-    mPen.setColor(Qt::white);
+    //mPen.setWidth(2);
+    //mPen.setColor(Qt::white);
 
 //test, geht nicht wg kein append()
 //    shapetest[0]={     //Qlist(dynamic array) - vom struct
@@ -61,25 +61,6 @@ RenderArea::ShapeType RenderArea::paramShape(unsigned int id, QString name, floa
     return sdata;
 }
 
-unsigned int RenderArea::setShape (unsigned int row){
-    if (shapestore.length() > row ){    //length starts@ 1, row @ 0
-        if(row == shapestore[row].id) mShapeIndex = row;              //or id
-        else{
-            qDebug("shapestore ID failure");
-            mShapeIndex = 0;
-        }
-        mPreScale = shapestore[mShapeIndex].prescale;
-        mIntervalLength = shapestore[mShapeIndex].interval;
-        mStepCount = shapestore[mShapeIndex].steps;
-        //setBackgroundColor(QColorConstants::DarkYellow);
-    }
-    else{
-        qDebug() << "shapelist index out of range, no menu";
-        return shapestore.length();
-    }
-    repaint();
-    return 0;
-}
 //    default:                                                //wichtig, default sollte immer gemacht werden
 //        mPreScale = 80;
 //        mIntervalLength = M_PI; //2 * M_PI;
@@ -87,13 +68,33 @@ unsigned int RenderArea::setShape (unsigned int row){
 //        setBackgroundColor(QColorConstants::DarkYellow);
 //        break;
 
+
+unsigned int RenderArea::setShape (unsigned int row){
+    if (shapestore.length() > row ){    //length starts@ 1, row @ 0
+        if(row != shapestore[row].id){
+            qDebug("shapestore ID failure");
+            mShapeIndex = 0;
+        }
+        mShapeIndex = row;        //setter
+        mPreScale = shapestore[mShapeIndex].prescale;
+        mIntervalLength = shapestore[mShapeIndex].interval;
+        mStepCount = shapestore[mShapeIndex].steps;
+    }
+    else{
+        qDebug() << "shapelist index out of range, no menu";
+        return shapestore.length();                             //return failure
+    }
+    repaint();  //causes Segmentation Fault ! when called inside paint
+    return 0;   //return success
+}
+
 unsigned int RenderArea::getShapeIDbyName(QString name){
     for (int i=0; shapestore.length() > i; i++ ){    //length starts@ 1, row @ 0
         if(!shapestore[i].name.compare(name,Qt::CaseInsensitive) ) {
             return shapestore[i].id;
         }
     }
-    return 0;
+    return 0;   //0 is failure or standartvalue
 }
 
 
@@ -191,20 +192,18 @@ QPointF RenderArea::compute_tilde(float x,  float y){
 }
 QPointF RenderArea::compute_mandelb(float x,  float y){  //, std::complex<double> *lastXval){
     //*lastXval = std::complex<double>(x, y);     //equals the Complex Number real=t * 1imag        #include <complex>
-    std::complex<double> Xval(x,y);
-    std::complex<double> Cval(1,1);
+    std::complex<double> Xval(0,0);
+    std::complex<double> Cval(x,y);
 
     // X1 =  (X0)² + C
-    for(int i=0; i<1; i++){
+    for(int i=0; i<3; i++){
         //*lastCval = ( *lastCval * *lastCval );
         //Xval *= Xval;
         //*lastCval *= Xval;
         Xval *= Xval;   // X²
         Xval += Cval;  //+ C
     }
-
     QPointF endv( Xval.real(), Xval.imag()  );    //return Complex Value in fpoint
-    //qDebug() << endv.x() << endv.y();
     return endv;
 }
 
@@ -217,18 +216,26 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
 
     QPainter painter(this);
 
+    //debug Shape choice:
+    //setShape(8);
+    //qDebug() <<
+    //unsigned int tempid = getShapeIDbyName("mandel brot");
+    //setShape(void);    //verboten!!! calls repaint()-> rekursiv
+
     bool drawLine = true;   //default true
+    if(mShapeIndex == getShapeIDbyName("mandel brot") ) drawLine = false;
     if(mShapeIndex == getShapeIDbyName("mandel brot") ){
         drawLine = false;
         painter.setRenderHint(QPainter::Antialiasing, false);
-        mPen.setWidth(1);
-        mPen.setColor(Qt::blue);
+        //mPen.setWidth(1);
+        //mPen.setColor(Qt::blue);
     }
     else {
         painter.setRenderHint(QPainter::Antialiasing, true);
-        mPen.setWidth(2);
-        mPen.setColor(Qt::white);
     }
+    QPen mPen;
+    mPen.setWidth(2);
+    mPen.setColor(Qt::white);        // wegmachen hier aus paint??
     painter.setBrush(mBackgroundColor );    //brush defines how shapes are filled
     painter.setPen(mPen);   //ehem mShapeColor
 
@@ -256,7 +263,7 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
     QPointF fprevPixel = compute(-tIntervLength, ystart) * tScale + center;    //first point
     for(float y = ystart; y < tIntervLength; y++){
         for (float x=-tIntervLength; x < tIntervLength; x += step){
-
+            //drawing functions: 1st draws a line between actual and previous point
             if(drawLine){
                 QPointF fpoint = compute(x, y) * tScale + center;
 
@@ -264,16 +271,17 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
                 painter.drawLine(fpoint, fprevPixel);
                 fprevPixel = fpoint;
             }
+            // (x,y)Plot function was added here later (for the mandelbrot set)
             else{
                 QPointF fpoint = compute(x, y) * tScale + center;
                 //konvertiere Float2D zu Int(Pixel)2D, unnötig
                 //        QPoint pixel;
                 //        pixel.setX(fpoint.x() * tScale + center.x() );
                 //        pixel.setY(fpoint.y() * tScale + center.y() );
-                mPen.setColor(fpoint.x() );
-                qDebug() << fpoint;
+                mPen.setColor(fpoint.x() );     //
                 painter.setPen(mPen);
-                painter.drawPoint(fpoint);   //pixel);
+                //qDebug() << fpoint;
+                painter.drawPoint(x,y);   //pixel);
             }
         }
     }
