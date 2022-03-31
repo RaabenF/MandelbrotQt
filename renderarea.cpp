@@ -34,7 +34,7 @@ RenderArea::RenderArea(QWidget *parent) :
     shapestore.append(paramShape(6,"Star",20,3*M_PI,256) );
     shapestore.append(paramShape(7,"Cloud",10,14*M_PI,128) );
     shapestore.append(paramShape(8,"Tilde",55,M_PI,256) );
-    shapestore.append(paramShape(9,"Mandel Brot",10, 3,256) );   //interval empfohlen: -3..3/y=i=-2..2
+    shapestore.append(paramShape(9,"Mandel Brot",10, 3, 16) );   //interval empfohlen: -3..3/y=i=-2..2   steps müsste count(pixel) sein?
     shapestore.append(paramShape(10,"tst",30,M_PI,256) );
     //shapestore.append(paramShape(,"",10,M_PI,256) );      //copy me
 
@@ -193,16 +193,19 @@ QPointF RenderArea::compute_tilde(float x,  float y){
 }
 QPointF RenderArea::compute_mandelb(float x,  float y){  //, std::complex<double> *lastXval){
     //*lastXval = std::complex<double>(x, y);     //equals the Complex Number real=t * 1imag        #include <complex>
-    std::complex<double> Xval(0,0);
+    std::complex<double> Xval(0,1);
     std::complex<double> Cval(x,y);
 
     // X1 =  (X0)² + C
-    for(int i=0; i<4; i++){
-        //*lastCval = ( *lastCval * *lastCval );
-        //Xval *= Xval;
-        //*lastCval *= Xval;
-        Xval = Xval * Xval;   // X²
+    for(int i=0; i<16; i++){
+        //Xval = Xval * Xval;   // X²
+        //Cval  = std::pow(Xval,2);
+        Xval = std::pow(Xval,2);
         Xval += Cval;  //+ C
+        if(std::isinf( Xval.real()) ){
+            QPointF endv( Xval.real(), 0  );    //return Complex Value in fpoint
+            return endv;
+        }
     }
     QPointF endv( Xval.real(), Xval.imag()  );    //return Complex Value in fpoint
     return endv;
@@ -225,7 +228,7 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
     //setShape(void);    //verboten!!! calls repaint()-> rekursiv
 
     bool drawLine = true;   //default true
-    if(mShapeIndex == getShapeIDbyName("mandel brot") ){
+    if(mShapeIndex == getShapeIDbyName("mandel brot") ){    //mandel: sPreScale 10, interval 3, steps 16
         drawLine = false;
         painter.setRenderHint(QPainter::Antialiasing, false);
         painter.setPen(Qt::black);
@@ -264,22 +267,23 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
             //drawing functions: 1st draws a line between actual and previous point
             if(drawLine){
                 QPointF fpoint = compute(x, y) * tScale + center;
-
+                //konvertiere Float2D zu Int(Pixel)2D, unnötig
+                //        QPoint pixel;
+                //        pixel.setX(fpoint.x() * tScale + center.x() );
+                //        pixel.setY(fpoint.y() * tScale + center.y() );
                 if(optionCool)painter.drawLine(fpoint, center);        //das war zuerst ein Fehler im Tut, als prevPixel gefehlt hat, grad übernommen
                 painter.drawLine(fpoint, fprevPixel);
                 fprevPixel = fpoint;
             }
             // (x,y)Plot function was added here later (for the mandelbrot set)
             else{
-                QPointF fpoint = compute(x, y) * tScale + center;
-                //konvertiere Float2D zu Int(Pixel)2D, unnötig
-                //        QPoint pixel;
-                //        pixel.setX(fpoint.x() * tScale + center.x() );
-                //        pixel.setY(fpoint.y() * tScale + center.y() );
-                if (fpoint.x() < 1000)painter.setPen(Qt::red);    //set color instead of using the pen
+                QPointF fpoint(x, y);
+                fpoint = fpoint * tScale + center;
+
+                if ( compute(x, y).x() < 1000)painter.setPen(Qt::red);    //set color instead of using the pen
                 else painter.setPen(Qt::black);
                 //qDebug() << fpoint;
-                painter.drawPoint(x,y);   //pixel);
+                painter.drawPoint(fpoint);   //pixel);
             }
         }//X-loop
 
