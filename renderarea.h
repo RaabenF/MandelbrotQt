@@ -65,6 +65,7 @@ private:
     QList<ShapeType> shapestore;     //dynamische Qliste des structs, kann wie c array verwendet werden
 
     QColor mBackgroundColor;
+    QColor mShapeColor;
     QPen mPen;
 
     float mIntervalLength, mPreScale;

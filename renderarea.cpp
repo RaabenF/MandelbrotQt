@@ -6,6 +6,7 @@ RenderArea::RenderArea(QWidget *parent) :
     QWidget(parent),
       //init list:
     mBackgroundColor(Qt::darkBlue),
+    mShapeColor(255, 255, 255),
     mIntervalLength(1), mPreScale(1), mStepCount(8), optionCool(false)
 {
     //mPen.setWidth(2);
@@ -196,11 +197,11 @@ QPointF RenderArea::compute_mandelb(float x,  float y){  //, std::complex<double
     std::complex<double> Cval(x,y);
 
     // X1 =  (X0)² + C
-    for(int i=0; i<3; i++){
+    for(int i=0; i<4; i++){
         //*lastCval = ( *lastCval * *lastCval );
         //Xval *= Xval;
         //*lastCval *= Xval;
-        Xval *= Xval;   // X²
+        Xval = Xval * Xval;   // X²
         Xval += Cval;  //+ C
     }
     QPointF endv( Xval.real(), Xval.imag()  );    //return Complex Value in fpoint
@@ -215,6 +216,7 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
     Q_UNUSED(event);        //deaktiviert Kompilerwarnung
 
     QPainter painter(this);
+    painter.setBrush(mBackgroundColor );    //brush defines how shapes are filled
 
     //debug Shape choice:
     //setShape(8);
@@ -223,21 +225,17 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
     //setShape(void);    //verboten!!! calls repaint()-> rekursiv
 
     bool drawLine = true;   //default true
-    if(mShapeIndex == getShapeIDbyName("mandel brot") ) drawLine = false;
     if(mShapeIndex == getShapeIDbyName("mandel brot") ){
         drawLine = false;
         painter.setRenderHint(QPainter::Antialiasing, false);
-        //mPen.setWidth(1);
-        //mPen.setColor(Qt::blue);
+        painter.setPen(Qt::black);
     }
     else {
         painter.setRenderHint(QPainter::Antialiasing, true);
+        mPen.setWidth(2);
+        mPen.setColor(Qt::white);        // wegmachen hier aus paint??
+        painter.setPen(mPen);   //draw with the pen
     }
-    QPen mPen;
-    mPen.setWidth(2);
-    mPen.setColor(Qt::white);        // wegmachen hier aus paint??
-    painter.setBrush(mBackgroundColor );    //brush defines how shapes are filled
-    painter.setPen(mPen);   //ehem mShapeColor
 
 
     //drawing area
@@ -278,13 +276,15 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
                 //        QPoint pixel;
                 //        pixel.setX(fpoint.x() * tScale + center.x() );
                 //        pixel.setY(fpoint.y() * tScale + center.y() );
-                mPen.setColor(fpoint.x() );     //
-                painter.setPen(mPen);
+                if (fpoint.x() < 1000)painter.setPen(Qt::red);    //set color instead of using the pen
+                else painter.setPen(Qt::black);
                 //qDebug() << fpoint;
                 painter.drawPoint(x,y);   //pixel);
             }
-        }
-    }
+        }//X-loop
+
+    }//Y-loop
+
     //durchläufe for() interval(256*2)+0+anfang+ende; 515
     //GESAMT DURCHLÄUFE 5, evtl wegen oversampling? -> ohne antialiasing 4
 }
