@@ -14,26 +14,26 @@ public:
     QSize minimumSizeHint() const override; // Q_DECL_OVERRIDE; im Tutorial ist deprecated
     QSize sizeHint() const override;
 
-    void setBackgroundColor(QColor color) {mBackgroundColor = color; repaint();}  //setter, inline weil kurz
+    void setBackgroundColor(QColor color) {mBackgroundColor = color; update();}  //setter, inline weil kurz
     QColor backgroundColor() const { return mBackgroundColor; }             //getter, const schützt die Member vor Änderungen
 
-    void setShapeColor(QColor color) {mPen.setColor(color); repaint();}  //setter, inline weil kurz
+    void setShapeColor(QColor color) {mPen.setColor(color); update();}  //setter, inline weil kurz
     QColor ShapeColor() const { return mPen.color(); }             //getter, const schützt die Member vor Änderungen
 
     unsigned int getShapeIDbyName(QString name);
     unsigned int setShape (unsigned int row);
     //unsigned int setShape (QString query);
 
-    void setInterval(float value) { mIntervalLength = value; repaint(); }
+    void setInterval(float value) { mIntervalLength = value; update(); }
     float Interval() const { return mIntervalLength; }
 
-    void setScale(int scale) { mScale = scale; repaint(); }     //int->float is ok da nur ganze werte
+    void setScale(int scale) { mScale = scale; update(); }     //int->float is ok da nur ganze werte
     float scale() const { return mScale; }
 
-    void setStepCount(int count) {mStepCount = count; repaint(); }
+    void setStepCount(int count) {mStepCount = count; update(); }
     int stepCount () const {return mStepCount; }
 
-    void setCool(bool Cool) { optionCool = Cool; repaint(); }
+    void setCool(bool Cool) { optionCool = Cool; update(); }
     bool Cool() const { return optionCool; }
 
     typedef struct id_name_scale_interval_steps{      //tag optional

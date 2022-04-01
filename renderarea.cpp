@@ -9,9 +9,6 @@ RenderArea::RenderArea(QWidget *parent) :
     mShapeColor(255, 255, 255),
     mIntervalLength(1), mPreScale(1), mStepCount(8), optionCool(false)
 {
-    //mPen.setWidth(2);
-    //mPen.setColor(Qt::white);
-
 //test, geht nicht wg kein append()
 //    shapetest[0]={     //Qlist(dynamic array) - vom struct
 //                    .id=999,
@@ -25,6 +22,7 @@ RenderArea::RenderArea(QWidget *parent) :
 //    for(int i=0,i<99,i++){
 //        shapestore[i]=
 //    }
+    //                          ID,Name     Prescale,Interval,Steps
     shapestore.append(paramShape(0,"Astroid",73,M_PI,256) );
     shapestore.append(paramShape(1,"Cycloid",11,6 * M_PI,128) );
     shapestore.append(paramShape(2,"HygensCycloid",35,2*M_PI,256) );
@@ -34,7 +32,7 @@ RenderArea::RenderArea(QWidget *parent) :
     shapestore.append(paramShape(6,"Star",20,3*M_PI,256) );
     shapestore.append(paramShape(7,"Cloud",10,14*M_PI,128) );
     shapestore.append(paramShape(8,"Tilde",55,M_PI,256) );
-    shapestore.append(paramShape(9,"Mandel Brot",100, 3, 256) );   //interval empfohlen: -3..3/y=i=-2..2   steps müsste count(pixel) sein?
+    shapestore.append(paramShape(9,"Mandel Brot",100, 2, 128) );   //interval empfohlen: -3..3    steps müsste count(pixel) sein?
     shapestore.append(paramShape(10,"tst",30,M_PI,256) );
     //shapestore.append(paramShape(,"",10,M_PI,256) );      //copy me
 
@@ -246,7 +244,7 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
     QPointF center = this->rect().center();     // war im tut kein floatP, ist aber egal, konvertierung erfolgt auch automatisch
     float step = mIntervalLength / mStepCount;
     float tIntervLength = mIntervalLength + step;
-    float tScale = mPreScale * mScale/100;
+    float tScale = mPreScale * mScale/100;      //preSc is set per Shape, mScale defaults 100 always => 1*mPreScale
 
     //std::complex<double> *complVal = new std::complex<double>(1,1);      //include <complex>
 
@@ -264,7 +262,7 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
     QPointF fprevPixel = compute(-tIntervLength, ystart) * tScale + center;    //first point
     for(float y = ystart; y < tIntervLength; y+= step){
         for (float x=-tIntervLength; x < tIntervLength; x += step){
-            //drawing functions: 1st draws a line between actual and previous point
+            //draws a line between actual and previous point
             if(drawLine){
                 QPointF fpoint = compute(x, y) * tScale + center;
                 //konvertiere Float2D zu Int(Pixel)2D, unnötig
@@ -279,10 +277,6 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
             else{
                 QPointF fpoint(x, y);
                 fpoint = fpoint * tScale + center;
-
-//                if ( compute(x, y).x() > 100)painter.setPen(Qt::red);    //set color instead of using the pen
-//                else painter.setPen(Qt::black);
-                //qDebug() << fpoint;
                 painter.setPen(compute(x, y).x());
                 painter.drawPoint(fpoint);   //pixel);
             }
