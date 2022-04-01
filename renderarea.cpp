@@ -34,7 +34,7 @@ RenderArea::RenderArea(QWidget *parent) :
     shapestore.append(paramShape(6,"Star",20,3*M_PI,256) );
     shapestore.append(paramShape(7,"Cloud",10,14*M_PI,128) );
     shapestore.append(paramShape(8,"Tilde",55,M_PI,256) );
-    shapestore.append(paramShape(9,"Mandel Brot",10, 3, 16) );   //interval empfohlen: -3..3/y=i=-2..2   steps müsste count(pixel) sein?
+    shapestore.append(paramShape(9,"Mandel Brot",100, 3, 256) );   //interval empfohlen: -3..3/y=i=-2..2   steps müsste count(pixel) sein?
     shapestore.append(paramShape(10,"tst",30,M_PI,256) );
     //shapestore.append(paramShape(,"",10,M_PI,256) );      //copy me
 
@@ -193,16 +193,16 @@ QPointF RenderArea::compute_tilde(float x,  float y){
 }
 QPointF RenderArea::compute_mandelb(float x,  float y){  //, std::complex<double> *lastXval){
     //*lastXval = std::complex<double>(x, y);     //equals the Complex Number real=t * 1imag        #include <complex>
-    std::complex<double> Xval(0,1);
+    std::complex<double> Xval(0,0);
     std::complex<double> Cval(x,y);
 
-    // X1 =  (X0)² + C
+    // X(i) = (X0)² + C
     for(int i=0; i<16; i++){
-        //Xval = Xval * Xval;   // X²
+        //Xval = Xval * Xval;   // X²-> geht ned
         //Cval  = std::pow(Xval,2);
         Xval = std::pow(Xval,2);
-        Xval += Cval;  //+ C
-        if(std::isinf( Xval.real()) ){
+        Xval += Cval;  //X+C
+        if(std::isinf( Xval.real()) ){  //untested
             QPointF endv( Xval.real(), 0  );    //return Complex Value in fpoint
             return endv;
         }
@@ -262,7 +262,7 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
         ystart = ystart * 2/3;
     }
     QPointF fprevPixel = compute(-tIntervLength, ystart) * tScale + center;    //first point
-    for(float y = ystart; y < tIntervLength; y++){
+    for(float y = ystart; y < tIntervLength; y+= step){
         for (float x=-tIntervLength; x < tIntervLength; x += step){
             //drawing functions: 1st draws a line between actual and previous point
             if(drawLine){
@@ -280,9 +280,10 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
                 QPointF fpoint(x, y);
                 fpoint = fpoint * tScale + center;
 
-                if ( compute(x, y).x() < 1000)painter.setPen(Qt::red);    //set color instead of using the pen
-                else painter.setPen(Qt::black);
+//                if ( compute(x, y).x() > 100)painter.setPen(Qt::red);    //set color instead of using the pen
+//                else painter.setPen(Qt::black);
                 //qDebug() << fpoint;
+                painter.setPen(compute(x, y).x());
                 painter.drawPoint(fpoint);   //pixel);
             }
         }//X-loop
