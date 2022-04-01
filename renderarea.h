@@ -73,7 +73,8 @@ private:
     unsigned int mShapeIndex=0;
     bool optionCool;
 
-    QPointF compute(float x,  float y);           //dispatcher based on type
+    QPointF compute(float x);           //dispatcher based on type
+    QPointF compute(float x,  float y);
 
     QPointF compute_astroid(float x);
     QPointF compute_cycloid(float x);
@@ -87,6 +88,9 @@ private:
     QPointF compute_cloud(float x);
     QPointF compute_tilde(float x,  float y);
     QPointF compute_mandelb(float x,  float y);
+
+    void lineDrawer(float step, float tIntervLength, float scale, QPointF center, QPainter &painter);
+    void plotDrawer(float step, float tIntervLength, float tScale, QPointF center, QPainter &painter);
 };
 
 #endif // RENDERAREA_H

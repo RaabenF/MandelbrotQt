@@ -97,8 +97,7 @@ unsigned int RenderArea::getShapeIDbyName(QString name){
 }
 
 
-QPointF RenderArea::compute(float x, float y){
-
+QPointF RenderArea::compute(float x){
     switch(mShapeIndex){
     case 0:
         return compute_astroid(x);
@@ -124,6 +123,14 @@ QPointF RenderArea::compute(float x, float y){
     case 7:
         return compute_cloud(x);
         break;
+    default:
+        return  compute_line(x);
+        break;
+    }
+    return QPointF(0,0);
+}
+QPointF RenderArea::compute(float x, float y){
+    switch(mShapeIndex){
     case 8:
         return compute_tilde(x, y);
         break;
@@ -136,7 +143,6 @@ QPointF RenderArea::compute(float x, float y){
     }
     return QPointF(0,0);
 }
-
 
 QPointF RenderArea::compute_astroid(float x){
     float xout = 2 * pow(cos(x),3);
@@ -226,18 +232,9 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
     //setShape(void);    //verboten!!! calls repaint()-> rekursiv
 
     bool drawLine = true;   //default true
-    if(mShapeIndex == getShapeIDbyName("mandel brot") ){    //mandel: sPreScale 10, interval 3, steps 16
+    if(mShapeIndex >= getShapeIDbyName("tilde") ){    //mandel: sPreScale 10, interval 3, steps 16
         drawLine = false;
-        painter.setRenderHint(QPainter::Antialiasing, false);
-        painter.setPen(Qt::black);
     }
-    else {
-        painter.setRenderHint(QPainter::Antialiasing, true);
-        mPen.setWidth(2);
-        mPen.setColor(Qt::white);        // wegmachen hier aus paint??
-        painter.setPen(mPen);   //draw with the pen
-    }
-
 
     //drawing area
     painter.drawRect(this->rect() );
@@ -252,45 +249,57 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
     //for (float t=0; t < tIntervLength; t += step){
 
 
-    float ystart=-tIntervLength;
     if (drawLine){
-        ystart = tIntervLength - step;    //positiv -> only one step for y-axis
+        lineDrawer(step, tIntervLength, tScale, center, painter);
     }
     else{
-        ystart = ystart * 2/3;
+        plotDrawer(step, tIntervLength, tScale, center, painter);
     }
-    QPointF fprevPixel = compute(-tIntervLength, ystart) * tScale + center;    //first point
-    for(float y = ystart; y < tIntervLength; y+= step){
-        for (float x=-tIntervLength; x < tIntervLength; x += step){
-            //draws a line between actual and previous point
-            if(drawLine){
-                QPointF fpoint = compute(x, y) * tScale + center;
-                //konvertiere Float2D zu Int(Pixel)2D, unnötig
-                //        QPoint pixel;
-                //        pixel.setX(fpoint.x() * tScale + center.x() );
-                //        pixel.setY(fpoint.y() * tScale + center.y() );
-                if(optionCool)painter.drawLine(fpoint, center);        //das war zuerst ein Fehler im Tut, als prevPixel gefehlt hat, grad übernommen
-                painter.drawLine(fpoint, fprevPixel);
-                fprevPixel = fpoint;
-            }
-            // (x,y)Plot function was added here later (for the mandelbrot set)
-            else{
-                QPointF fpoint(x, y);
-                fpoint = fpoint * tScale + center;
-                painter.setPen(compute(x, y).x());
-                painter.drawPoint(fpoint);   //pixel);
-            }
-        }//X-loop
 
-    }//Y-loop
+
 
     //durchläufe for() interval(256*2)+0+anfang+ende; 515
     //GESAMT DURCHLÄUFE 5, evtl wegen oversampling? -> ohne antialiasing 4
 }
 
+void RenderArea::lineDrawer(float step, float tIntervLength, float tScale, QPointF center, QPainter &painter){
+    painter.setRenderHint(QPainter::Antialiasing, true);
+    mPen.setWidth(2);
+    mPen.setColor(Qt::white);        // wegmachen hier aus paint??
+    painter.setPen(mPen);   //draw with the pen
 
+    QPointF fprevPixel = compute(-tIntervLength) * tScale + center;    //first point
 
+    for (float x=-tIntervLength; x < tIntervLength; x += step){
+        //draws a line between actual and previous point
+        QPointF fpoint = compute(x) * tScale + center;
+        //konvertiere Float2D zu Int(Pixel)2D, unnötig
+        //        QPoint pixel;
+        //        pixel.setX(fpoint.x() * tScale + center.x() );
+        //        pixel.setY(fpoint.y() * tScale + center.y() );
+        if(optionCool)painter.drawLine(fpoint, center);        //das war zuerst ein Fehler im Tut, als prevPixel gefehlt hat, grad übernommen
+        painter.drawLine(fpoint, fprevPixel);
+        fprevPixel = fpoint;
+    }//X-loop
+}
 
+void RenderArea::plotDrawer(float step, float tIntervLength, float tScale, QPointF center, QPainter &painter){
+    painter.setRenderHint(QPainter::Antialiasing, false);
+    painter.setPen(Qt::black);
+
+    float ystart=tIntervLength;
+    ystart = ystart * 2/3;
+
+    for(float y = -ystart; y < ystart; y+= step){
+        for (float x=-tIntervLength; x < tIntervLength; x += step){
+            // (x,y)Plot function was added here later (for the mandelbrot set)
+            QPointF fpoint(x, y);
+            fpoint = fpoint * tScale + center;
+            painter.setPen(compute(x, y).x() );
+            painter.drawPoint(fpoint);   //pixel);
+        }//X-loop
+    }//Y-loop
+}
 
 
 
