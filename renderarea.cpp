@@ -32,7 +32,7 @@ RenderArea::RenderArea(QWidget *parent) :
     shapestore.append(paramShape(6,"Star",20,3*M_PI,256) );
     shapestore.append(paramShape(7,"Cloud",10,14*M_PI,128) );
     shapestore.append(paramShape(8,"Tilde",55,M_PI,256) );
-    shapestore.append(paramShape(9,"Mandel Brot",100, 2, 128) );   //interval empfohlen: -3..3    steps müsste count(pixel) sein?
+    shapestore.append(paramShape(9,"Mandel Brot",100, 1.5, 128) );   //interval empfohlen: -3..3    steps müsste count(pixel) sein?
     shapestore.append(paramShape(10,"tst",30,M_PI,256) );
     //shapestore.append(paramShape(,"",10,M_PI,256) );      //copy me
 
@@ -197,21 +197,19 @@ QPointF RenderArea::compute_tilde(float x,  float y){
 }
 QPointF RenderArea::compute_mandelb(float x,  float y){  //, std::complex<double> *lastXval){
     //*lastXval = std::complex<double>(x, y);     //equals the Complex Number real=t * 1imag        #include <complex>
-    std::complex<double> Xval(0,0);
-    std::complex<double> Cval(x,y);
+    std::complex<double> Xvar(0,0);
+    std::complex<double> Cvar(x,y);
 
     // X(i) = (X0)² + C
     for(int i=0; i<16; i++){
-        //Xval = Xval * Xval;   // X²-> geht ned
-        //Cval  = std::pow(Xval,2);
-        Xval = std::pow(Xval,2);
-        Xval += Cval;  //X+C
-        if(std::isinf( Xval.real()) ){  //untested
-            QPointF endv( Xval.real(), 0  );    //return Complex Value in fpoint
+        Xvar = Xvar * Xvar;     //Xval = std::pow(Xval,2);
+        Xvar += Cvar;           //X+C
+        if(std::isinf( Xvar.real()) ){          //break at infinity
+            QPointF endv( Xvar.real(), 0  );    //return Complex Value in fpoint
             return endv;
         }
     }
-    QPointF endv( Xval.real(), Xval.imag()  );    //return Complex Value in fpoint
+    QPointF endv( Xvar.real(), Xvar.imag()  );    //return Complex Value in fpoint
     return endv;
 }
 
@@ -225,18 +223,14 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
     QPainter painter(this);
     painter.setBrush(mBackgroundColor );    //brush defines how shapes are filled
 
-    //debug Shape choice:
-    //setShape(8);
-    //qDebug() <<
-    //unsigned int tempid = getShapeIDbyName("mandel brot");
-    //setShape(void);    //verboten!!! calls repaint()-> rekursiv
+    //setShape(foo);    //verboten!!! calls repaint()-> rekursiv
 
     bool drawLine = true;   //default true
-    if(mShapeIndex >= getShapeIDbyName("tilde") ){    //mandel: sPreScale 10, interval 3, steps 16
+    if(mShapeIndex >= getShapeIDbyName("tilde") ){
         drawLine = false;
     }
 
-    //drawing area
+    //drawing area:
     painter.drawRect(this->rect() );
     QPointF center = this->rect().center();     // war im tut kein floatP, ist aber egal, konvertierung erfolgt auch automatisch
     float step = mIntervalLength / mStepCount;
@@ -270,7 +264,7 @@ void RenderArea::lineDrawer(float step, float tIntervLength, float tScale, QPoin
 
     QPointF fprevPixel = compute(-tIntervLength) * tScale + center;    //first point
 
-    for (float x=-tIntervLength; x < tIntervLength; x += step){
+    for (float x= -tIntervLength; x < tIntervLength; x += step){
         //draws a line between actual and previous point
         QPointF fpoint = compute(x) * tScale + center;
         //konvertiere Float2D zu Int(Pixel)2D, unnötig
@@ -287,11 +281,11 @@ void RenderArea::plotDrawer(float step, float tIntervLength, float tScale, QPoin
     painter.setRenderHint(QPainter::Antialiasing, false);
     painter.setPen(Qt::black);
 
-    float ystart=tIntervLength;
-    ystart = ystart * 2/3;
+    float ystart=tIntervLength, Xoffset = -0.7;
+    ystart = ystart * 4/5;
 
     for(float y = -ystart; y < ystart; y+= step){
-        for (float x=-tIntervLength; x < tIntervLength; x += step){
+        for (float x = Xoffset - tIntervLength; x < tIntervLength+Xoffset; x += step){
             // (x,y)Plot function was added here later (for the mandelbrot set)
             QPointF fpoint(x, y);
             fpoint = fpoint * tScale + center;
