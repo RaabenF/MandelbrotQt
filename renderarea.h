@@ -90,7 +90,7 @@ private:
     QPointF compute_mandelb(float x,  float y);
 
     void lineDrawer(float step, float tIntervLength, float scale, QPointF center, QPainter &painter);
-    void plotDrawer(float step, float tIntervLength, float tScale, QPointF center, QPainter &painter);
+    void plotDrawer(float tIntervLength, float tScale, QPointF center, QPainter &painter);
 };
 
 #endif // RENDERAREA_H

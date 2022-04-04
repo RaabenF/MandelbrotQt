@@ -32,7 +32,7 @@ RenderArea::RenderArea(QWidget *parent) :
     shapestore.append(paramShape(6,"Star",20,3*M_PI,256) );
     shapestore.append(paramShape(7,"Cloud",10,14*M_PI,128) );
     shapestore.append(paramShape(8,"Tilde",55,M_PI,256) );
-    shapestore.append(paramShape(9,"Mandel Brot",100, 1.5, 128) );   //interval empfohlen: -3..3    steps müsste count(pixel) sein?
+    shapestore.append(paramShape(9,"Mandel Brot",1, 1.5, 128) );   //interval empfohlen: -3..3    steps müsste count(pixel) sein?
     shapestore.append(paramShape(10,"tst",30,M_PI,256) );
     //shapestore.append(paramShape(,"",10,M_PI,256) );      //copy me
 
@@ -235,7 +235,7 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
     QPointF center = this->rect().center();     // war im tut kein floatP, ist aber egal, konvertierung erfolgt auch automatisch
     float step = mIntervalLength / mStepCount;
     float tIntervLength = mIntervalLength + step;
-    float tScale = mPreScale * mScale/100;      //preSc is set per Shape, mScale defaults 100 always => 1*mPreScale
+    float tScale = mPreScale * mScale/100;      //preSc is set per Shape, mScale-slider:0..100..1000  => 1*mPreScale => default value: 0..100(* mScale/100)
 
     //std::complex<double> *complVal = new std::complex<double>(1,1);      //include <complex>
 
@@ -247,7 +247,7 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
         lineDrawer(step, tIntervLength, tScale, center, painter);
     }
     else{
-        plotDrawer(step, tIntervLength, tScale, center, painter);
+        plotDrawer(tIntervLength, tScale, center, painter);
     }
 
 
@@ -264,7 +264,7 @@ void RenderArea::lineDrawer(float step, float tIntervLength, float tScale, QPoin
 
     QPointF fprevPixel = compute(-tIntervLength) * tScale + center;    //first point
 
-    for (float x= -tIntervLength; x < tIntervLength; x += step){
+    for (float x= -tIntervLength; x < tIntervLength; x += step){    //drawing center focused is probably safest way
         //draws a line between actual and previous point
         QPointF fpoint = compute(x) * tScale + center;
         //konvertiere Float2D zu Int(Pixel)2D, unnötig
@@ -277,18 +277,31 @@ void RenderArea::lineDrawer(float step, float tIntervLength, float tScale, QPoin
     }//X-loop
 }
 
-void RenderArea::plotDrawer(float step, float tIntervLength, float tScale, QPointF center, QPainter &painter){
+void RenderArea::plotDrawer(float tIntervLength, float tScale, QPointF center, QPainter &painter){
     painter.setRenderHint(QPainter::Antialiasing, false);
+    //painter.setRenderHint(QPainter::TextAntialiasing, false);
+    //painter.setRenderHint(QPainter::SmoothPixmapTransform, false);
+    //painter.setRenderHint(QPainter::VerticalSubpixelPositioning, false);
+    //painter.setRenderHint(QPainter::LosslessImageRendering, false);
     painter.setPen(Qt::black);
 
-    float ystart=tIntervLength, Xoffset = -0.7;
-    ystart = ystart * 4/5;
+    int width = RenderArea::width();
+    int height = RenderArea::height();
+    const int wHalf= width/2 +1, hHalf= height/2 +1;  //in case uneven numbers diveded loose one pixel and '0'
+    const float Xstep = tIntervLength/wHalf / tScale;         //Interval is half size of the picture, as wHalf is
+    const float Ystep = tIntervLength/hHalf / tScale;
 
-    for(float y = -ystart; y < ystart; y+= step){
-        for (float x = Xoffset - tIntervLength; x < tIntervLength+Xoffset; x += step){
+    float Xoffset = 0.7;
+    float x = 0, y = 0;
+
+    for(int w= -wHalf; w < wHalf; w++){
+        for (int h= -hHalf; h < hHalf; h++){
+            //scale
+            x = w * Xstep - Xoffset;
+            y = h * Ystep;
             // (x,y)Plot function was added here later (for the mandelbrot set)
-            QPointF fpoint(x, y);
-            fpoint = fpoint * tScale + center;
+            QPointF fpoint(w + wHalf, h + hHalf);       //area starts at (0,0)
+            //fpoint = fpoint * tScale + center;
             painter.setPen(compute(x, y).x() );
             painter.drawPoint(fpoint);   //pixel);
         }//X-loop
