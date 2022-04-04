@@ -31,8 +31,8 @@ RenderArea::RenderArea(QWidget *parent) :
     shapestore.append(paramShape(5,"Mandala",8,6*M_PI,512) );
     shapestore.append(paramShape(6,"Star",20,3*M_PI,256) );
     shapestore.append(paramShape(7,"Cloud",10,14*M_PI,128) );
-    shapestore.append(paramShape(8,"Tilde",55,M_PI,256) );
-    shapestore.append(paramShape(9,"Mandel Brot",1, 1.5, 128) );   //interval empfohlen: -3..3    steps müsste count(pixel) sein?
+    shapestore.append(paramShape(8,"Tilde",55,M_PI,256,0,0) );
+    shapestore.append(paramShape(9,"Mandel Brot",1, 1.5, 128, 0.7) );   //interval empfohlen: -3..3    steps müsste count(pixel) sein?
     shapestore.append(paramShape(10,"tst",30,M_PI,256) );
     //shapestore.append(paramShape(,"",10,M_PI,256) );      //copy me
 
@@ -46,13 +46,15 @@ QSize RenderArea::sizeHint() const {        //return the preferred size of this 
     return QSize(400,400);
 }
 
-RenderArea::ShapeType RenderArea::paramShape(unsigned int id, QString name, float preScale, float interval, int steps ){
+RenderArea::ShapeType RenderArea::paramShape(unsigned int id, QString name, float preScale, float interval, int steps, float Xoffset, float Yoffset ){
     ShapeType sdata = {     //Qlist(dynamic array) - vom struct
          .id=id,
          .name=name,            //, function_name;
          .prescale=preScale,
          .interval=interval,    //Length; //8, M_PI;
-         .steps=steps           //Count;
+         .steps=steps,           //Count;
+         .Xoffset=Xoffset,
+         .Yoffset=Yoffset
     };
     //alt (convenience) menüliste:
     ShapeList.append(name);
@@ -123,6 +125,9 @@ QPointF RenderArea::compute(float x){
     case 7:
         return compute_cloud(x);
         break;
+    case 8:
+        return compute_tilde(x);
+        break;
     default:
         return  compute_line(x);
         break;
@@ -131,9 +136,6 @@ QPointF RenderArea::compute(float x){
 }
 QPointF RenderArea::compute(float x, float y){
     switch(mShapeIndex){
-    case 8:
-        return compute_tilde(x, y);
-        break;
     case 9:
         return compute_mandelb(x, y);
         break;
@@ -192,8 +194,9 @@ QPointF RenderArea::compute_cloud(float x){
     float yout = (a-b) * sin(x*b/a) + sign*b*sin(x* (a+b) /a);
     return QPointF( xout, yout );
 }
-QPointF RenderArea::compute_tilde(float x,  float y){
-    return QPointF( x + sin(x), 0.5*x + cos(y) );
+//X-Y plots
+QPointF RenderArea::compute_tilde(float x){
+    return QPointF( x + sin(x), 0.5*x + cos(100*x) );
 }
 QPointF RenderArea::compute_mandelb(float x,  float y){  //, std::complex<double> *lastXval){
     //*lastXval = std::complex<double>(x, y);     //equals the Complex Number real=t * 1imag        #include <complex>
@@ -226,7 +229,7 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
     //setShape(foo);    //verboten!!! calls repaint()-> rekursiv
 
     bool drawLine = true;   //default true
-    if(mShapeIndex >= getShapeIDbyName("tilde") ){
+    if(mShapeIndex >= getShapeIDbyName("mandel brot") ){
         drawLine = false;
     }
 
@@ -244,10 +247,17 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
 
 
     if (drawLine){
+        painter.setRenderHint(QPainter::Antialiasing, true);
         lineDrawer(step, tIntervLength, tScale, center, painter);
     }
     else{
-        plotDrawer(tIntervLength, tScale, center, painter);
+        painter.setRenderHint(QPainter::Antialiasing, false);
+        //painter.setRenderHint(QPainter::TextAntialiasing, false);
+        //painter.setRenderHint(QPainter::SmoothPixmapTransform, false);
+        //painter.setRenderHint(QPainter::VerticalSubpixelPositioning, false);
+        //painter.setRenderHint(QPainter::LosslessImageRendering, false);
+        painter.setPen(Qt::black);
+        plotDrawer(tIntervLength, tScale, center, painter, shapestore[this->mShapeIndex].Xoffset, shapestore[this->mShapeIndex].Yoffset);
     }
 
 
@@ -257,7 +267,6 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
 }
 
 void RenderArea::lineDrawer(float step, float tIntervLength, float tScale, QPointF center, QPainter &painter){
-    painter.setRenderHint(QPainter::Antialiasing, true);
     mPen.setWidth(2);
     mPen.setColor(Qt::white);        // wegmachen hier aus paint??
     painter.setPen(mPen);   //draw with the pen
@@ -277,28 +286,20 @@ void RenderArea::lineDrawer(float step, float tIntervLength, float tScale, QPoin
     }//X-loop
 }
 
-void RenderArea::plotDrawer(float tIntervLength, float tScale, QPointF center, QPainter &painter){
-    painter.setRenderHint(QPainter::Antialiasing, false);
-    //painter.setRenderHint(QPainter::TextAntialiasing, false);
-    //painter.setRenderHint(QPainter::SmoothPixmapTransform, false);
-    //painter.setRenderHint(QPainter::VerticalSubpixelPositioning, false);
-    //painter.setRenderHint(QPainter::LosslessImageRendering, false);
-    painter.setPen(Qt::black);
-
+void RenderArea::plotDrawer(float tIntervLength, float tScale, QPointF center, QPainter &painter, const float Xoffset, const float Yoffset){
     int width = RenderArea::width();
     int height = RenderArea::height();
     const int wHalf= width/2 +1, hHalf= height/2 +1;  //in case uneven numbers diveded loose one pixel and '0'
     const float Xstep = tIntervLength/wHalf / tScale;         //Interval is half size of the picture, as wHalf is
     const float Ystep = tIntervLength/hHalf / tScale;
 
-    float Xoffset = 0.7;
     float x = 0, y = 0;
 
     for(int w= -wHalf; w < wHalf; w++){
         for (int h= -hHalf; h < hHalf; h++){
             //scale
             x = w * Xstep - Xoffset;
-            y = h * Ystep;
+            y = h * Ystep - Yoffset;
             // (x,y)Plot function was added here later (for the mandelbrot set)
             QPointF fpoint(w + wHalf, h + hHalf);       //area starts at (0,0)
             //fpoint = fpoint * tScale + center;

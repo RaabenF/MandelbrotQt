@@ -41,6 +41,7 @@ public:
         QString name;//, function_name;
         float prescale, interval;//Length; //8, M_PI;
         int steps;//Count;
+        float Xoffset, Yoffset;
     }ShapeType;
 
     ShapeType paramShape(
@@ -48,7 +49,8 @@ public:
         QString name,
         float sPreScale,
         float interval,
-        int steps
+        int steps,
+        float Xoffset=0, float Yoffset=0    //default argument here causes casual usage
     );
 
     //QList<ShapeType> shapetest;
@@ -86,11 +88,11 @@ private:
     QPointF compute_mandala(float x);
     QPointF compute_star(float x);
     QPointF compute_cloud(float x);
-    QPointF compute_tilde(float x,  float y);
+    QPointF compute_tilde(float x);
     QPointF compute_mandelb(float x,  float y);
 
     void lineDrawer(float step, float tIntervLength, float scale, QPointF center, QPainter &painter);
-    void plotDrawer(float tIntervLength, float tScale, QPointF center, QPainter &painter);
+    void plotDrawer(float tIntervLength, float tScale, QPointF center, QPainter &painter, float Xoffset, float Yoffset);
 };
 
 #endif // RENDERAREA_H
