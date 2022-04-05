@@ -51,7 +51,6 @@ void RenderArea::mousePressEvent(QMouseEvent *event){
         mMouseOldPos = event->pos();   //position().toPoint();
     }
 }
-
 void RenderArea::mouseMoveEvent(QMouseEvent *event){
     if (!mMouseOldPos.isNull() ){   //event->button() == Qt::LeftButton) {
         mMove -= event->pos() - mMouseOldPos;
@@ -61,13 +60,13 @@ void RenderArea::mouseMoveEvent(QMouseEvent *event){
         mMouseOldPos = event->pos();    //globalPosition();
     }
 }
-
 void RenderArea::mouseReleaseEvent(QMouseEvent *event){
     if (event->button() == Qt::LeftButton && !mMouseOldPos.isNull() ) {
         mMouseOldPos.setX(0);
         mMouseOldPos.setY(0);
     }
 }
+
 RenderArea::ShapeType RenderArea::paramShape(unsigned int id, QString name, float preScale, float interval, int steps, float Xoffset, float Yoffset ){
     ShapeType sdata = {     //Qlist(dynamic array) - vom struct
          .id=id,
@@ -78,12 +77,9 @@ RenderArea::ShapeType RenderArea::paramShape(unsigned int id, QString name, floa
          .Xoffset=Xoffset,
          .Yoffset=Yoffset
     };
-    //alt (convenience) menüliste:
     ShapeList.append(name);
-
     return sdata;
 }
-
 //    default:                                                //wichtig, default sollte immer gemacht werden
 //        mPreScale = 80;
 //        mIntervalLength = M_PI; //2 * M_PI;
@@ -313,9 +309,9 @@ void RenderArea::lineDrawer(float step, float tIntervLength, float tScale, QPoin
 }
 
 void RenderArea::plotDrawer(float tIntervLength, float tScale, QPointF center, QPainter &painter, const int Xoffset, const int Yoffset){
-    int width = RenderArea::width();
-    int height = RenderArea::height();
-    const int wHalf= width/2 +1, hHalf= height/2 +1;  //in case uneven numbers diveded loose one pixel and '0'
+    int tWidth = this->width();
+    int tHeight = this->height();
+    const int wHalf= tWidth/2 +1, hHalf= tHeight/2 +1;  //in case uneven numbers diveded loose one pixel and '0'
     const float Xstep = tIntervLength/wHalf / tScale;         //Interval is half size of the picture, as wHalf is
     const float Ystep = tIntervLength/hHalf / tScale;
 
