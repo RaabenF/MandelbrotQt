@@ -48,20 +48,26 @@ QSize RenderArea::sizeHint() const {        //return the preferred size of this 
 
 void RenderArea::mousePressEvent(QMouseEvent *event){
     if (event->button() == Qt::LeftButton) {
-     mMouseOldPos = event->pos();   //position().toPoint();
-     //scribbling = true;
+        mMouseOldPos = event->pos();   //position().toPoint();
     }
 }
 
 void RenderArea::mouseMoveEvent(QMouseEvent *event){
-    QPoint delta = event->pos() - mMouseOldPos;
-    mMove -= delta;
-    if (delta.manhattanLength() > 2){   // the mouse has moved more than 3 pixels since the oldPosition
-        update();      //do a full repaint instead of update
+    if (!mMouseOldPos.isNull() ){   //event->button() == Qt::LeftButton) {
+        mMove -= event->pos() - mMouseOldPos;
+        if (mMove.manhattanLength() > 2){   //movement treshold
+            update();                       //do a full repaint?
+        }
+        mMouseOldPos = event->pos();    //globalPosition();
     }
-    mMouseOldPos = event->pos();    //globalPosition();
 }
 
+void RenderArea::mouseReleaseEvent(QMouseEvent *event){
+    if (event->button() == Qt::LeftButton && !mMouseOldPos.isNull() ) {
+        mMouseOldPos.setX(0);
+        mMouseOldPos.setY(0);
+    }
+}
 RenderArea::ShapeType RenderArea::paramShape(unsigned int id, QString name, float preScale, float interval, int steps, float Xoffset, float Yoffset ){
     ShapeType sdata = {     //Qlist(dynamic array) - vom struct
          .id=id,

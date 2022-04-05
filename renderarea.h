@@ -63,6 +63,7 @@ protected:
 
     void mousePressEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
+    void mouseReleaseEvent(QMouseEvent *event) override;
     QPoint mMouseOldPos = QPoint(0,0);
     QPoint mMove;
 
