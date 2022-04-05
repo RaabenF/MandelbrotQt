@@ -61,8 +61,9 @@ public:
 protected:
     void paintEvent(QPaintEvent *event) override;
 
+    void mousePressEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
-    QPoint mOldPosition;
+    QPoint mMouseOldPos = QPoint(0,0);
     QPoint mMove;
 
 signals:

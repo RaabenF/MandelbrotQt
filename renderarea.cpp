@@ -46,13 +46,20 @@ QSize RenderArea::sizeHint() const {        //return the preferred size of this 
     return QSize(400,400);
 }
 
-void RenderArea::mouseMoveEvent(QMouseEvent *event){
-    QPoint delta = event->pos() - mOldPosition;
-    if (delta.manhattanLength() > 3){   // the mouse has moved more than 3 pixels since the oldPosition
-        mMove += delta;
-        repaint();      //do a full repaint instead of update
+void RenderArea::mousePressEvent(QMouseEvent *event){
+    if (event->button() == Qt::LeftButton) {
+     mMouseOldPos = event->pos();   //position().toPoint();
+     //scribbling = true;
     }
-    mOldPosition = event->pos();
+}
+
+void RenderArea::mouseMoveEvent(QMouseEvent *event){
+    QPoint delta = event->pos() - mMouseOldPos;
+    mMove -= delta;
+    if (delta.manhattanLength() > 2){   // the mouse has moved more than 3 pixels since the oldPosition
+        update();      //do a full repaint instead of update
+    }
+    mMouseOldPos = event->pos();    //globalPosition();
 }
 
 RenderArea::ShapeType RenderArea::paramShape(unsigned int id, QString name, float preScale, float interval, int steps, float Xoffset, float Yoffset ){
@@ -89,6 +96,7 @@ unsigned int RenderArea::setShape (unsigned int row){
         mPreScale = shapestore[mShapeIndex].prescale;
         mIntervalLength = shapestore[mShapeIndex].interval;
         mStepCount = shapestore[mShapeIndex].steps;
+        mMove = QPoint(0,0);
     }
     else{
         qDebug() << "shapelist index out of range, no menu";
@@ -249,10 +257,8 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
     float tIntervLength = mIntervalLength + step;
     float tScale = mPreScale * mScale/100;      //preSc is set per Shape, mScale-slider:0..100..1000  => 1*mPreScale => default value: 0..100(* mScale/100)
 
-    int tXoffset = mMove.x();
-    int tYoffset = mMove.y();
-    mMove.setX(0);
-    mMove.setY(0);
+    int tXoffset = shapestore[this->mShapeIndex].Xoffset + mMove.x();
+    int tYoffset = shapestore[this->mShapeIndex].Yoffset + mMove.y();
 
     //std::complex<double> *complVal = new std::complex<double>(1,1);      //include <complex>
 
@@ -271,7 +277,7 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
         //painter.setRenderHint(QPainter::VerticalSubpixelPositioning, false);
         //painter.setRenderHint(QPainter::LosslessImageRendering, false);
         painter.setPen(Qt::black);
-        plotDrawer(tIntervLength, tScale, center, painter, shapestore[this->mShapeIndex].Xoffset, shapestore[this->mShapeIndex].Yoffset);
+        plotDrawer(tIntervLength, tScale, center, painter, tXoffset, tYoffset);
     }
 
 
