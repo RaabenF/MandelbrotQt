@@ -311,24 +311,31 @@ void RenderArea::lineDrawer(float step, float tIntervLength, float tScale, QPoin
 void RenderArea::plotDrawer(float tIntervLength, float tScale, QPointF center, QPainter &painter, int Xoffset, int Yoffset){
     int tWidth = this->width();
     int tHeight = this->height();
-    const float Xstep = tIntervLength/tWidth / tScale;         //Interval is half size of the picture, as wHalf is
+    const float Xstep = tIntervLength/tWidth / tScale;
     const float Ystep = tIntervLength/tHeight / tScale;
 
-    float x = 0, y = 0;
-    Xoffset -= tWidth/2;
+    Xoffset -= tWidth/2;    //set start point at half the area negative
     Yoffset -= tHeight/2;
 
+    float x = 0, y = 0;
+    x = Xoffset * Xstep;
+    y = Yoffset * Ystep;
+
+    //scale with step
+
     for(int w= 0; w < tWidth; w++){
-        for (int h= 0; h < tHeight; h++){
-            //scale
-            x = (w + Xoffset) * Xstep;
-            y = (h + Yoffset) * Ystep;
-            // (x,y)Plot function was added here later (for the mandelbrot set)
-            QPointF fpoint(w, h);       //area starts at (0,0)
+        for(int h= 0; h < tHeight; h++){
+            // (x,y)Plot function was added here (for the mandelbrot set)
             painter.setPen(compute(x, y).x() );
 
+            QPointF fpoint(w, h);       //area starts at (0,0)
             painter.drawPoint(fpoint);
+            y += Ystep;
+
         }//X-loop
+        x += Xstep;
+        y = Yoffset * Ystep;
+
     }//Y-loop
 }
 
