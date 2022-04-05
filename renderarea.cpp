@@ -32,7 +32,7 @@ RenderArea::RenderArea(QWidget *parent) :
     shapestore.append(paramShape(6,"Star",20,3*M_PI,256) );
     shapestore.append(paramShape(7,"Cloud",10,14*M_PI,128) );
     shapestore.append(paramShape(8,"Tilde",55,M_PI,256,0,0) );
-    shapestore.append(paramShape(9,"Mandel Brot",1, 1.5, 128, 0.7) );   //interval empfohlen: -3..3    steps müsste count(pixel) sein?
+    shapestore.append(paramShape(9,"Mandel Brot",1, 1.5, 128, -100) );   //interval empfohlen: -3..3    steps müsste count(pixel) sein?
     shapestore.append(paramShape(10,"tst",30,M_PI,256) );
     //shapestore.append(paramShape(,"",10,M_PI,256) );      //copy me
 
@@ -44,6 +44,15 @@ QSize RenderArea::minimumSizeHint() const { //recommended minimum size for the w
 
 QSize RenderArea::sizeHint() const {        //return the preferred size of this item.
     return QSize(400,400);
+}
+
+void RenderArea::mouseMoveEvent(QMouseEvent *event){
+    QPoint delta = event->pos() - mOldPosition;
+    if (delta.manhattanLength() > 3){   // the mouse has moved more than 3 pixels since the oldPosition
+        mMove += delta;
+        repaint();      //do a full repaint instead of update
+    }
+    mOldPosition = event->pos();
 }
 
 RenderArea::ShapeType RenderArea::paramShape(unsigned int id, QString name, float preScale, float interval, int steps, float Xoffset, float Yoffset ){
@@ -240,6 +249,11 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
     float tIntervLength = mIntervalLength + step;
     float tScale = mPreScale * mScale/100;      //preSc is set per Shape, mScale-slider:0..100..1000  => 1*mPreScale => default value: 0..100(* mScale/100)
 
+    int tXoffset = mMove.x();
+    int tYoffset = mMove.y();
+    mMove.setX(0);
+    mMove.setY(0);
+
     //std::complex<double> *complVal = new std::complex<double>(1,1);      //include <complex>
 
     //painter.drawLine(this->rect().topLeft(), this->rect().bottomRight() );
@@ -286,7 +300,7 @@ void RenderArea::lineDrawer(float step, float tIntervLength, float tScale, QPoin
     }//X-loop
 }
 
-void RenderArea::plotDrawer(float tIntervLength, float tScale, QPointF center, QPainter &painter, const float Xoffset, const float Yoffset){
+void RenderArea::plotDrawer(float tIntervLength, float tScale, QPointF center, QPainter &painter, const int Xoffset, const int Yoffset){
     int width = RenderArea::width();
     int height = RenderArea::height();
     const int wHalf= width/2 +1, hHalf= height/2 +1;  //in case uneven numbers diveded loose one pixel and '0'
@@ -298,13 +312,13 @@ void RenderArea::plotDrawer(float tIntervLength, float tScale, QPointF center, Q
     for(int w= -wHalf; w < wHalf; w++){
         for (int h= -hHalf; h < hHalf; h++){
             //scale
-            x = w * Xstep - Xoffset;
-            y = h * Ystep - Yoffset;
+            x = (w + Xoffset) * Xstep;
+            y = (h + Yoffset) * Ystep;
             // (x,y)Plot function was added here later (for the mandelbrot set)
             QPointF fpoint(w + wHalf, h + hHalf);       //area starts at (0,0)
-            //fpoint = fpoint * tScale + center;
             painter.setPen(compute(x, y).x() );
-            painter.drawPoint(fpoint);   //pixel);
+
+            painter.drawPoint(fpoint);
         }//X-loop
     }//Y-loop
 }

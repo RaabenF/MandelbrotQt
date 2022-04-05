@@ -38,9 +38,9 @@ public:
 
     typedef struct id_name_scale_interval_steps{      //tag optional
         unsigned int id;
-        QString name;//, function_name;
-        float prescale, interval;//Length; //8, M_PI;
-        int steps;//Count;
+        QString name;               //, function_name;
+        float prescale, interval;   //Length; //8, M_PI;
+        int steps;                  //Count;
         float Xoffset, Yoffset;
     }ShapeType;
 
@@ -60,6 +60,10 @@ public:
 
 protected:
     void paintEvent(QPaintEvent *event) override;
+
+    void mouseMoveEvent(QMouseEvent *event) override;
+    QPoint mOldPosition;
+    QPoint mMove;
 
 signals:
 
@@ -92,7 +96,7 @@ private:
     QPointF compute_mandelb(float x,  float y);
 
     void lineDrawer(float step, float tIntervLength, float scale, QPointF center, QPainter &painter);
-    void plotDrawer(float tIntervLength, float tScale, QPointF center, QPainter &painter, float Xoffset, float Yoffset);
+    void plotDrawer(float tIntervLength, float tScale, QPointF center, QPainter &painter, int Xoffset, int Yoffset);
 };
 
 #endif // RENDERAREA_H

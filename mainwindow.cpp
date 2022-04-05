@@ -8,10 +8,11 @@ MainWindow::MainWindow(QWidget *parent)
     ,modelShape(new QStringListModel(this) )
 {
     ui->setupUi(this);      //setup form
+    //this->setAttribute(Qt::WA_TranslucentBackground);
 
     // Populate our model of Shaplist for the scrollable Menulist
     modelShape->setStringList(ui->renderArea->ShapeList);    //string-list-model mShapeList
-    ui->lvShape->setModel(modelShape);    // Glue model and view together
+    ui->lvShape->setModel(modelShape);    // Glue model and (List)view together
 
     this->ui->renderArea->setShape(0);
     update_ui();
