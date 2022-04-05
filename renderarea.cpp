@@ -32,7 +32,7 @@ RenderArea::RenderArea(QWidget *parent) :
     shapestore.append(paramShape(6,"Star",20,3*M_PI,256) );
     shapestore.append(paramShape(7,"Cloud",10,14*M_PI,128) );
     shapestore.append(paramShape(8,"Tilde",55,M_PI,256,0,0) );
-    shapestore.append(paramShape(9,"Mandel Brot",1, 1.5, 128, -100) );   //interval empfohlen: -3..3    steps müsste count(pixel) sein?
+    shapestore.append(paramShape(9,"Mandel Brot",1, 3, 128, -100) );   //interval empfohlen: -3..3    steps müsste count(pixel) sein?
     shapestore.append(paramShape(10,"tst",30,M_PI,256) );
     //shapestore.append(paramShape(,"",10,M_PI,256) );      //copy me
 
@@ -308,22 +308,23 @@ void RenderArea::lineDrawer(float step, float tIntervLength, float tScale, QPoin
     }//X-loop
 }
 
-void RenderArea::plotDrawer(float tIntervLength, float tScale, QPointF center, QPainter &painter, const int Xoffset, const int Yoffset){
+void RenderArea::plotDrawer(float tIntervLength, float tScale, QPointF center, QPainter &painter, int Xoffset, int Yoffset){
     int tWidth = this->width();
     int tHeight = this->height();
-    const int wHalf= tWidth/2 +1, hHalf= tHeight/2 +1;  //in case uneven numbers diveded loose one pixel and '0'
-    const float Xstep = tIntervLength/wHalf / tScale;         //Interval is half size of the picture, as wHalf is
-    const float Ystep = tIntervLength/hHalf / tScale;
+    const float Xstep = tIntervLength/tWidth / tScale;         //Interval is half size of the picture, as wHalf is
+    const float Ystep = tIntervLength/tHeight / tScale;
 
     float x = 0, y = 0;
+    Xoffset -= tWidth/2;
+    Yoffset -= tHeight/2;
 
-    for(int w= -wHalf; w < wHalf; w++){
-        for (int h= -hHalf; h < hHalf; h++){
+    for(int w= 0; w < tWidth; w++){
+        for (int h= 0; h < tHeight; h++){
             //scale
             x = (w + Xoffset) * Xstep;
             y = (h + Yoffset) * Ystep;
             // (x,y)Plot function was added here later (for the mandelbrot set)
-            QPointF fpoint(w + wHalf, h + hHalf);       //area starts at (0,0)
+            QPointF fpoint(w, h);       //area starts at (0,0)
             painter.setPen(compute(x, y).x() );
 
             painter.drawPoint(fpoint);
