@@ -64,8 +64,8 @@ protected:
     void mousePressEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
-    QPoint mMouseOldPos = QPoint(0,0);
-    QPoint mMove;
+    QPoint mMouseOldPos = QPoint(0,0), mTempMove;
+    float mXoffset=0, mYoffset=0;               //valid till setShape()
 
 signals:
 

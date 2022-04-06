@@ -53,18 +53,15 @@ void RenderArea::mousePressEvent(QMouseEvent *event){
 }
 void RenderArea::mouseMoveEvent(QMouseEvent *event){
     if (!mMouseOldPos.isNull() ){   //event->button() == Qt::LeftButton) {
-        mMove -= event->pos() - mMouseOldPos;
-        if (mMove.manhattanLength() > 2){   //movement treshold
+        mTempMove -= event->pos() - mMouseOldPos;
+        if (mTempMove.manhattanLength() > 2){   //movement treshold
             update();                       //do a full repaint?
         }
         mMouseOldPos = event->pos();    //globalPosition();
     }
 }
 void RenderArea::mouseReleaseEvent(QMouseEvent *event){
-    if (event->button() == Qt::LeftButton && !mMouseOldPos.isNull() ) {
-        mMouseOldPos.setX(0);
-        mMouseOldPos.setY(0);
-    }
+
 }
 
 RenderArea::ShapeType RenderArea::paramShape(unsigned int id, QString name, float preScale, float interval, int steps, float Xoffset, float Yoffset ){
@@ -98,7 +95,8 @@ unsigned int RenderArea::setShape (unsigned int row){
         mPreScale = shapestore[mShapeIndex].prescale;
         mIntervalLength = shapestore[mShapeIndex].interval;
         mStepCount = shapestore[mShapeIndex].steps;
-        mMove = QPoint(0,0);
+        mTempMove = QPoint(0,0);
+        mXoffset=0, mYoffset=0;
     }
     else{
         qDebug() << "shapelist index out of range, no menu";
@@ -257,16 +255,16 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
     QPointF center = this->rect().center();     // war im tut kein floatP, ist aber egal, konvertierung erfolgt auch automatisch
     float step = mIntervalLength / mStepCount;
     float tIntervLength = mIntervalLength + step;
-    float tScale = mPreScale * mScale/100;      //preSc is set per Shape, mScale-slider:0..100..1000  => 1*mPreScale => default value: 0..100(* mScale/100)
+    float tScale = mPreScale * mScale/100;      //preSc is set per Shape, mScale-slider:0..100..1000  => 0..1..10 *mPreScale mandel=1..100
 
-    int tXoffset = shapestore[this->mShapeIndex].Xoffset + mMove.x();
-    int tYoffset = shapestore[this->mShapeIndex].Yoffset + mMove.y();
 
     //std::complex<double> *complVal = new std::complex<double>(1,1);      //include <complex>
 
     //painter.drawLine(this->rect().topLeft(), this->rect().bottomRight() );
     //for (float t=0; t < tIntervLength; t += step){
 
+    int tXoffset = shapestore[this->mShapeIndex].Xoffset;// + mMove.x();   //lifetime of move is set with setShape(), that works well
+    int tYoffset = shapestore[this->mShapeIndex].Yoffset;
 
     if (drawLine){
         painter.setRenderHint(QPainter::Antialiasing, true);
@@ -308,33 +306,47 @@ void RenderArea::lineDrawer(float step, float tIntervLength, float tScale, QPoin
     }//X-loop
 }
 
-void RenderArea::plotDrawer(float tIntervLength, float tScale, QPointF center, QPainter &painter, int Xoffset, int Yoffset){
+void RenderArea::plotDrawer(float tIntervLength, float tScale, QPointF center, QPainter &painter, const int Xoffset, const int Yoffset){
     int tWidth = this->width();
     int tHeight = this->height();
-    const float Xstep = tIntervLength/tWidth / tScale;
-    const float Ystep = tIntervLength/tHeight / tScale;
+    QPoint tArea = QPoint(this->width(), this->height() );
 
-    Xoffset -= tWidth/2;    //set start point at half the area negative
-    Yoffset -= tHeight/2;
+    const float yInterval = tIntervLength * tHeight/tWidth;
+    const QPointF step = QPointF(tIntervLength/tWidth / tScale,        // *step scales a pix value to Interval-Units
+                                 yInterval/tHeight / tScale);    //bigger scale -> smaller steps
 
-    float x = 0, y = 0;
-    x = Xoffset * Xstep;
-    y = Yoffset * Ystep;
+    const float tInitScale = mPreScale * 100/100;      //preSc is set per Shape, mScale-slider:0..100..1000  => 0..1..10 *mPreScale mandel=1..100
+    // 1. set the offset from shapestore for the point-of-view at beginning
+    float xStartOffset = tIntervLength/tWidth /tInitScale * Xoffset;   //viewport offset at init scale (1) =initStep*offset   -> 100px=-2/3  relative to 0,0
+    float yStartOffset = yInterval/tHeight /tInitScale * Yoffset;
 
-    //scale with step
+
+    // 2. this 2nd offset is added to the point-of-view, the step component represents the actual scale which is added in permanently
+    mXoffset += (mTempMove.x() * step.x() );
+    mYoffset += (mTempMove.y() * step.y() );
+    mTempMove = QPoint(0,0);
+
+    float x = xStartOffset + mXoffset;
+    // 3. add the remaining half of the area-in-sight to the offsets, that equates to the final starting point
+    x = x - tIntervLength/2 /tScale;
 
     for(int w= 0; w < tWidth; w++){
+        //y = -1.5;   //debug
+
+        float y = yStartOffset + mYoffset;
+        y = y - yInterval/2 /tScale;
+
         for(int h= 0; h < tHeight; h++){
+
             // (x,y)Plot function was added here (for the mandelbrot set)
             painter.setPen(compute(x, y).x() );
 
             QPointF fpoint(w, h);       //area starts at (0,0)
             painter.drawPoint(fpoint);
-            y += Ystep;
+            y += step.y();
 
         }//X-loop
-        x += Xstep;
-        y = Yoffset * Ystep;
+        x += step.x();
 
     }//Y-loop
 }
