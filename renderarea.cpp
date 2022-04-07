@@ -268,7 +268,7 @@ QPointF RenderArea::compute_mandelb(float x,  float y){  //, std::complex<double
     return endv;
 }
 
-QPoint RenderArea::compute_mandelb(int x,  int y){  //only float double and longdouble are guaranteed
+QPoint RenderArea::compute_mandelb(int x,  int y){  //only float double and longdouble are guaranteed in std::complex
     float a=x, b=y;
     a /=100; b/=100;
     std::complex<float> Xvar(0,0);
