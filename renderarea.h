@@ -4,6 +4,7 @@
 #include <QWidget>
 #include <QPen>
 #include <complex>
+#include <QPixmap>
 
 class RenderArea : public QWidget
 {
@@ -14,26 +15,26 @@ public:
     QSize minimumSizeHint() const override; // Q_DECL_OVERRIDE; im Tutorial ist deprecated
     QSize sizeHint() const override;
 
-    void setBackgroundColor(QColor color) {mBackgroundColor = color; update();}  //setter, inline weil kurz
+    void setBackgroundColor(QColor color) {mBackgroundColor = color; update(); valuechanged(); }  //setter, inline weil kurz
     QColor backgroundColor() const { return mBackgroundColor; }             //getter, const schützt die Member vor Änderungen
 
-    void setShapeColor(QColor color) {mPen.setColor(color); update();}  //setter, inline weil kurz
+    void setShapeColor(QColor color) {mPen.setColor(color); update(); valuechanged(); }  //setter, inline weil kurz
     QColor ShapeColor() const { return mPen.color(); }             //getter, const schützt die Member vor Änderungen
 
     unsigned int getShapeIDbyName(QString name);
     unsigned int setShape (unsigned int row);
     //unsigned int setShape (QString query);
 
-    void setInterval(float value) { mIntervalLength = value; update(); }
+    void setInterval(float value) { mIntervalLength = value; update(); valuechanged(); }
     float Interval() const { return mIntervalLength; }
 
-    void setScale(int scale) { mScale = scale; update(); }     //int->float is ok da nur ganze werte
+    void setScale(int scale) { mScale = scale; update(); valuechanged(); }     //int->float is ok da nur ganze werte
     float scale() const { return mScale; }
 
-    void setStepCount(int count) {mStepCount = count; update(); }
+    void setStepCount(int count) {mStepCount = count; update(); valuechanged(); }
     int stepCount () const {return mStepCount; }
 
-    void setCool(bool Cool) { optionCool = Cool; update(); }
+    void setCool(bool Cool) { optionCool = Cool; update(); valuechanged(); }
     bool Cool() const { return optionCool; }
 
     typedef struct id_name_scale_interval_steps{      //tag optional
@@ -60,6 +61,7 @@ public:
 
 protected:
     void paintEvent(QPaintEvent *event) override;
+    void resizeEvent(QResizeEvent *event) override;
 
     void mousePressEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
@@ -71,6 +73,8 @@ signals:
 
 private:
     QList<ShapeType> shapestore;     //dynamische Qliste des structs, kann wie c array verwendet werden
+    QPixmap *shapemap;
+    QPainter *mappainter;
 
     QColor mBackgroundColor;
     QColor mShapeColor;
@@ -80,6 +84,7 @@ private:
     int mStepCount, mScale=100;
     unsigned int mShapeIndex=0;
     bool optionCool;
+    void valuechanged();
 
     QPointF compute(float x);           //dispatcher based on type
     QPointF compute(float x,  float y);
@@ -98,7 +103,7 @@ private:
     QPointF compute_mandelb(float x,  float y);
 
     void lineDrawer(float step, float tIntervLength, float scale, QPointF center, QPainter &painter);
-    void plotDrawer(float tIntervLength, float tScale, QPointF center, QPainter &painter, int Xoffset, int Yoffset);
+    void plotDrawer(QPainter *painter);
 };
 
 #endif // RENDERAREA_H

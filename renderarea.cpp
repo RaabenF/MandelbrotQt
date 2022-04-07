@@ -36,6 +36,9 @@ RenderArea::RenderArea(QWidget *parent) :
     shapestore.append(paramShape(10,"tst",30,M_PI,256) );
     //shapestore.append(paramShape(,"",10,M_PI,256) );      //copy me
 
+    shapemap = new QPixmap(this->size() );    //inherits paintdevice
+    mappainter = new QPainter(shapemap);
+
 }
 
 QSize RenderArea::minimumSizeHint() const { //recommended minimum size for the widget
@@ -44,6 +47,15 @@ QSize RenderArea::minimumSizeHint() const { //recommended minimum size for the w
 
 QSize RenderArea::sizeHint() const {        //return the preferred size of this item.
     return QSize(400,400);
+}
+
+void RenderArea::resizeEvent(QResizeEvent *event){
+    //called before paintEvent  |   event->oldSize();
+    delete mappainter;  //delete in this order
+    delete shapemap;
+    shapemap = new QPixmap(event->size() );
+    mappainter = new QPainter(shapemap);
+    plotDrawer(this->mappainter);
 }
 
 void RenderArea::mousePressEvent(QMouseEvent *event){
@@ -55,6 +67,8 @@ void RenderArea::mouseMoveEvent(QMouseEvent *event){
     if (!mMouseOldPos.isNull() ){   //event->button() == Qt::LeftButton) {
         mTempMove -= event->pos() - mMouseOldPos;
         if (mTempMove.manhattanLength() > 2){   //movement treshold
+
+            plotDrawer(this->mappainter);
             update();                       //do a full repaint?
         }
         mMouseOldPos = event->pos();    //globalPosition();
@@ -113,6 +127,12 @@ unsigned int RenderArea::getShapeIDbyName(QString name){
         }
     }
     return 0;   //0 is failure or standartvalue
+}
+
+void RenderArea::valuechanged(){
+    if(mShapeIndex >= getShapeIDbyName("mandel brot") ){
+        plotDrawer(this->mappainter);
+    }
 }
 
 
@@ -263,8 +283,6 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
     //painter.drawLine(this->rect().topLeft(), this->rect().bottomRight() );
     //for (float t=0; t < tIntervLength; t += step){
 
-    int tXoffset = shapestore[this->mShapeIndex].Xoffset;// + mMove.x();   //lifetime of move is set with setShape(), that works well
-    int tYoffset = shapestore[this->mShapeIndex].Yoffset;
 
     if (drawLine){
         painter.setRenderHint(QPainter::Antialiasing, true);
@@ -276,8 +294,10 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
         //painter.setRenderHint(QPainter::SmoothPixmapTransform, false);
         //painter.setRenderHint(QPainter::VerticalSubpixelPositioning, false);
         //painter.setRenderHint(QPainter::LosslessImageRendering, false);
+
         painter.setPen(Qt::black);
-        plotDrawer(tIntervLength, tScale, center, painter, tXoffset, tYoffset);
+
+        painter.drawPixmap(this->rect(), *shapemap, shapemap->rect() );
     }
 
 
@@ -306,7 +326,14 @@ void RenderArea::lineDrawer(float step, float tIntervLength, float tScale, QPoin
     }//X-loop
 }
 
-void RenderArea::plotDrawer(float tIntervLength, float tScale, QPointF center, QPainter &painter, const int Xoffset, const int Yoffset){
+void RenderArea::plotDrawer(QPainter *painter){
+
+    float tIntervLength = mIntervalLength;
+    float tScale = mPreScale * mScale/100;      //preSc is set per Shape, mScale-slider:0..100..1000  => 0..1..10 *mPreScale mandel=1..100
+
+    int tXoffset = shapestore[this->mShapeIndex].Xoffset;// + mMove.x();   //lifetime of move is set with setShape(), that works well
+    int tYoffset = shapestore[this->mShapeIndex].Yoffset;
+
     int tWidth = this->width();
     int tHeight = this->height();
     QPoint tArea = QPoint(this->width(), this->height() );
@@ -317,8 +344,8 @@ void RenderArea::plotDrawer(float tIntervLength, float tScale, QPointF center, Q
 
     const float tInitScale = mPreScale * 100/100;      //preSc is set per Shape, mScale-slider:0..100..1000  => 0..1..10 *mPreScale mandel=1..100
     // 1. set the offset from shapestore for the point-of-view at beginning
-    float xStartOffset = tIntervLength/tWidth /tInitScale * Xoffset;   //viewport offset at init scale (1) =initStep*offset   -> 100px=-2/3  relative to 0,0
-    float yStartOffset = yInterval/tHeight /tInitScale * Yoffset;
+    float xStartOffset = tIntervLength/tWidth /tInitScale * tXoffset;   //viewport offset at init scale (1) =initStep*offset   -> 100px=-2/3  relative to 0,0
+    float yStartOffset = yInterval/tHeight /tInitScale * tYoffset;
 
 
     // 2. this 2nd offset is added to the point-of-view, the step component represents the actual scale which is added in permanently
@@ -339,10 +366,10 @@ void RenderArea::plotDrawer(float tIntervLength, float tScale, QPointF center, Q
         for(int h= 0; h < tHeight; h++){
 
             // (x,y)Plot function was added here (for the mandelbrot set)
-            painter.setPen(compute(x, y).x() );
+            painter->setPen(compute(x, y).x() );
 
             QPointF fpoint(w, h);       //area starts at (0,0)
-            painter.drawPoint(fpoint);
+            painter->drawPoint(fpoint);
             y += step.y();
 
         }//X-loop
