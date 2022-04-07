@@ -2,14 +2,14 @@
 #define MAINWINDOW_H
 
 #include <QMainWindow>
-#include <qtreeview.h>
+//#include <qtreeview.h>
 #include <QStringListModel>
 
 #include <ui_mainwindow.h>  //versucht ohne namespace Ui zu machen, geht
 
-QT_BEGIN_NAMESPACE
+//QT_BEGIN_NAMESPACE
 //namespace Ui { class MainWindow; }
-QT_END_NAMESPACE
+//QT_END_NAMESPACE
 
 class MainWindow : public QMainWindow
 {
@@ -18,6 +18,8 @@ class MainWindow : public QMainWindow
 public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
+
+    void setStepSpinStep(unsigned int steplength);
 
 private slots:
 
@@ -35,9 +37,10 @@ private slots:
 
     void on_lvShape_clicked(const QModelIndex &index);
 
+
 private:
     //Ui::MainWindow *ui;   //ist gleich:
-    Ui_MainWindow *ui;
+    Ui_MainWindow ui;
     QStringListModel *modelShape;
     float lastInterval;
 

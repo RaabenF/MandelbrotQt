@@ -1,13 +1,14 @@
 #include "renderarea.h"
 #include <QPaintEvent>
 #include <QPainter>
+#include "mainwindow.h"
 
 RenderArea::RenderArea(QWidget *parent) :
-    QWidget(parent),
+    QWidget(parent)
       //init list:
-    mBackgroundColor(Qt::darkBlue),
-    mShapeColor(255, 255, 255),
-    mIntervalLength(1), mPreScale(1), mStepCount(8), optionCool(false)
+    ,mBackgroundColor(Qt::darkBlue)
+    ,mShapeColor(255, 255, 255)
+    ,mIntervalLength(1), mPreScale(1), mStepCount(8), optionCool(false)
 {
 //test, geht nicht wg kein append()
 //    shapetest[0]={     //Qlist(dynamic array) - vom struct
@@ -32,7 +33,7 @@ RenderArea::RenderArea(QWidget *parent) :
     shapestore.append(paramShape(6,"Star",20,3*M_PI,256) );
     shapestore.append(paramShape(7,"Cloud",10,14*M_PI,128) );
     shapestore.append(paramShape(8,"Tilde",55,M_PI,256,0,0) );
-    shapestore.append(paramShape(9,"Mandel Brot",1, 3, 128, -100) );   //interval empfohlen: -3..3    steps müsste count(pixel) sein?
+    shapestore.append(paramShape(9,"Mandel Brot",1, 3, 4, -100) );   //interval empfohlen: -3..3    steps müsste count(pixel) sein?
     shapestore.append(paramShape(10,"tst",30,M_PI,256) );
     //shapestore.append(paramShape(,"",10,M_PI,256) );      //copy me
 
@@ -116,7 +117,10 @@ unsigned int RenderArea::setShape (unsigned int row){
         qDebug() << "shapelist index out of range, no menu";
         return shapestore.length();                             //return failure
     }
-    repaint();  //causes Segmentation Fault ! when called inside paint
+    if(mShapeIndex >= getShapeIDbyName("mandel brot") ){
+        mDrawLine = false;
+    } else mDrawLine = true;
+    repaint();
     return 0;   //return success
 }
 
@@ -182,6 +186,17 @@ QPointF RenderArea::compute(float x, float y){
     }
     return QPointF(0,0);
 }
+QPoint RenderArea::compute(int x, int y){
+    switch(mShapeIndex){
+    case 9:
+        return compute_mandelb(x, y);
+        break;
+    default:
+        return QPoint(0,0);
+        break;
+    }
+    return QPoint(0,0);
+}
 
 QPointF RenderArea::compute_astroid(float x){
     float xout = 2 * pow(cos(x),3);
@@ -237,8 +252,8 @@ QPointF RenderArea::compute_tilde(float x){
 }
 QPointF RenderArea::compute_mandelb(float x,  float y){  //, std::complex<double> *lastXval){
     //*lastXval = std::complex<double>(x, y);     //equals the Complex Number real=t * 1imag        #include <complex>
-    std::complex<double> Xvar(0,0);
-    std::complex<double> Cvar(x,y);
+    std::complex<float> Xvar(0,0);
+    std::complex<float> Cvar(x,y);
 
     // X(i) = (X0)² + C
     for(int i=0; i<16; i++){
@@ -250,6 +265,25 @@ QPointF RenderArea::compute_mandelb(float x,  float y){  //, std::complex<double
         }
     }
     QPointF endv( Xvar.real(), Xvar.imag()  );    //return Complex Value in fpoint
+    return endv;
+}
+
+QPoint RenderArea::compute_mandelb(int x,  int y){  //only float double and longdouble are guaranteed
+    float a=x, b=y;
+    a /=100; b/=100;
+    std::complex<float> Xvar(0,0);
+    std::complex<float> Cvar(a,b);
+
+    // X(i) = (X0)² + C
+    for(int i=0; i<mStepCount; i++){
+        Xvar = Xvar * Xvar;     //Xval = std::pow(Xval,2);
+        Xvar += Cvar;           //X+C
+        if(std::isinf( Xvar.real()) ){          //break at infinity
+            QPoint endv( Xvar.real(), 0  );    //return Complex Value in fpoint
+            return endv;
+        }
+    }
+    QPoint endv( Xvar.real(), Xvar.imag()  );    //return Complex Value in fpoint
     return endv;
 }
 
@@ -265,26 +299,19 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
 
     //setShape(foo);    //verboten!!! calls repaint()-> rekursiv
 
-    bool drawLine = true;   //default true
-    if(mShapeIndex >= getShapeIDbyName("mandel brot") ){
-        drawLine = false;
-    }
-
-    //drawing area:
-    painter.drawRect(this->rect() );
-    QPointF center = this->rect().center();     // war im tut kein floatP, ist aber egal, konvertierung erfolgt auch automatisch
-    float step = mIntervalLength / mStepCount;
-    float tIntervLength = mIntervalLength + step;
-    float tScale = mPreScale * mScale/100;      //preSc is set per Shape, mScale-slider:0..100..1000  => 0..1..10 *mPreScale mandel=1..100
-
-
     //std::complex<double> *complVal = new std::complex<double>(1,1);      //include <complex>
 
     //painter.drawLine(this->rect().topLeft(), this->rect().bottomRight() );
     //for (float t=0; t < tIntervLength; t += step){
 
+    if (mDrawLine){
+        //drawing area:
+        painter.drawRect(this->rect() );
+        QPointF center = this->rect().center();     // war im tut kein floatP, ist aber egal, konvertierung erfolgt auch automatisch
+        float step = mIntervalLength / mStepCount;
+        float tIntervLength = mIntervalLength + step;
+        float tScale = mPreScale * mScale/100;      //preSc is set per Shape, mScale-slider:0..100..1000  => 0..1..10 *mPreScale mandel=1..100
 
-    if (drawLine){
         painter.setRenderHint(QPainter::Antialiasing, true);
         lineDrawer(step, tIntervLength, tScale, center, painter);
     }
@@ -296,7 +323,6 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
         //painter.setRenderHint(QPainter::LosslessImageRendering, false);
 
         painter.setPen(Qt::black);
-
         painter.drawPixmap(this->rect(), *shapemap, shapemap->rect() );
     }
 
@@ -357,25 +383,37 @@ void RenderArea::plotDrawer(QPainter *painter){
     // 3. add the remaining half of the area-in-sight to the offsets, that equates to the final starting point
     x = x - tIntervLength/2 /tScale;
 
-    for(int w= 0; w < tWidth; w++){
-        //y = -1.5;   //debug
+    if(true){      //float calculation
+        for(int w= 0; w < tWidth; w++){
+            //y = -1.5;   //debug
 
-        float y = yStartOffset + mYoffset;
-        y = y - yInterval/2 /tScale;
+            float y = yStartOffset + mYoffset;
+            y = y - yInterval/2 /tScale;
 
-        for(int h= 0; h < tHeight; h++){
+            for(int h= 0; h < tHeight; h++){
 
-            // (x,y)Plot function was added here (for the mandelbrot set)
-            painter->setPen(compute(x, y).x() );
+                // (x,y)Plot function was added here (for the mandelbrot set)
+                painter->setPen(compute(x, y).x() );
 
-            QPointF fpoint(w, h);       //area starts at (0,0)
-            painter->drawPoint(fpoint);
-            y += step.y();
+                QPointF fpoint(w, h);       //area starts at (0,0)
+                painter->drawPoint(fpoint);
+                y += step.y();
 
-        }//X-loop
-        x += step.x();
+            }//X-loop
+            x += step.x();
 
-    }//Y-loop
+        }//Y-loop
+    } else {        //int calculation test
+        for(int w= 0; w < tWidth; w++){
+            for(int h= 0; h < tHeight; h++){
+                // (x,y)Plot function was added here (for the mandelbrot set)
+                painter->setPen(compute(w-tWidth/2, h-tHeight/2).x() );        //pass int values to complex-float
+
+                QPointF fpoint(w, h);       //area starts at (0,0)
+                painter->drawPoint(fpoint);
+            }//X-loop
+        }//Y-loop
+    }
 }
 
 

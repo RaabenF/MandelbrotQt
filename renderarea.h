@@ -22,7 +22,10 @@ public:
     QColor ShapeColor() const { return mPen.color(); }             //getter, const schützt die Member vor Änderungen
 
     unsigned int getShapeIDbyName(QString name);
+
     unsigned int setShape (unsigned int row);
+    unsigned int getActShapeID() const { return mShapeIndex; }
+
     //unsigned int setShape (QString query);
 
     void setInterval(float value) { mIntervalLength = value; update(); valuechanged(); }
@@ -58,7 +61,6 @@ public:
 
     QStringList ShapeList;      //menu entries
 
-
 protected:
     void paintEvent(QPaintEvent *event) override;
     void resizeEvent(QResizeEvent *event) override;
@@ -68,6 +70,7 @@ protected:
     void mouseReleaseEvent(QMouseEvent *event) override;
     QPoint mMouseOldPos = QPoint(0,0), mTempMove;
     float mXoffset=0, mYoffset=0;               //valid till setShape()
+
 
 signals:
 
@@ -80,14 +83,15 @@ private:
     QColor mShapeColor;
     QPen mPen;
 
+    unsigned int mShapeIndex=0;
     float mIntervalLength, mPreScale;
     int mStepCount, mScale=100;
-    unsigned int mShapeIndex=0;
-    bool optionCool;
+    bool optionCool, mDrawLine;
     void valuechanged();
 
     QPointF compute(float x);           //dispatcher based on type
     QPointF compute(float x,  float y);
+    QPoint compute(int x, int y);
 
     QPointF compute_astroid(float x);
     QPointF compute_cycloid(float x);
@@ -101,6 +105,7 @@ private:
     QPointF compute_cloud(float x);
     QPointF compute_tilde(float x);
     QPointF compute_mandelb(float x,  float y);
+    QPoint compute_mandelb(int x,  int y);
 
     void lineDrawer(float step, float tIntervLength, float scale, QPointF center, QPainter &painter);
     void plotDrawer(QPainter *painter);
