@@ -37,9 +37,6 @@ RenderArea::RenderArea(QWidget *parent) :
     shapestore.append(paramShape(10,"tst",30,M_PI,256) );
     //shapestore.append(paramShape(,"",10,M_PI,256) );      //copy me
 
-    shapemap = new QPixmap(this->size() );    //inherits paintdevice
-    mappainter = new QPainter(shapemap);
-
 }
 
 QSize RenderArea::minimumSizeHint() const { //recommended minimum size for the widget
@@ -53,8 +50,8 @@ QSize RenderArea::sizeHint() const {        //return the preferred size of this 
 void RenderArea::resizeEvent(QResizeEvent *event){
     //called before paintEvent  |   event->oldSize();
     if(!mDrawLine){
-        delete mappainter;  //delete in this order
-        delete shapemap;
+        //delete mappainter;  //delete in this order
+        //delete shapemap;
         shapemap = new QPixmap(event->size() );
         mappainter = new QPainter(shapemap);
         plotDrawer(this->mappainter);
@@ -72,7 +69,7 @@ void RenderArea::mouseMoveEvent(QMouseEvent *event){
         if (mTempMove.manhattanLength() > 2){   //movement treshold
             if(!mDrawLine){
                 plotDrawer(this->mappainter);
-                update();                       //do a full repaint?
+                update();
             }
         }
         mMouseOldPos = event->pos();    //globalPosition();
@@ -122,6 +119,9 @@ unsigned int RenderArea::setShape (unsigned int row){
     }
     if(mShapeIndex >= getShapeIDbyName("mandel brot") ){
         mDrawLine = false;
+
+        shapemap = new QPixmap(this->size() );    //inherits paintdevice
+        mappainter = new QPainter(shapemap);
     } else mDrawLine = true;
     repaint();
     return 0;   //return success
@@ -136,9 +136,9 @@ unsigned int RenderArea::getShapeIDbyName(QString name){
     return 0;   //0 is failure or standartvalue
 }
 
-void RenderArea::valuechanged(){
+void RenderArea::updatePixmap(){
     if(mShapeIndex >= getShapeIDbyName("mandel brot") ){
-        plotDrawer(this->mappainter);
+        plotDrawer(this->mappainter);       //repaint
     }
 }
 
@@ -255,8 +255,8 @@ QPointF RenderArea::compute_tilde(float x){
 }
 QPointF RenderArea::compute_mandelb(float x,  float y){  //, std::complex<double> *lastXval){
     //*lastXval = std::complex<double>(x, y);     //equals the Complex Number real=t * 1imag        #include <complex>
-    std::complex<float> Xvar(0,0);
-    std::complex<float> Cvar(x,y);
+    std::complex<double> Xvar(0,0);
+    std::complex<double> Cvar(x,y);
 
     // X(i) = (X0)² + C
     for(int i=0; i<16; i++){

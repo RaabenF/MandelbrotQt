@@ -15,10 +15,10 @@ public:
     QSize minimumSizeHint() const override; // Q_DECL_OVERRIDE; im Tutorial ist deprecated
     QSize sizeHint() const override;
 
-    void setBackgroundColor(QColor color) {mBackgroundColor = color; update(); valuechanged(); }  //setter, inline weil kurz
+    void setBackgroundColor(QColor color) {mBackgroundColor = color; updatePixmap(); update(); }  //setter, inline weil kurz
     QColor backgroundColor() const { return mBackgroundColor; }             //getter, const schützt die Member vor Änderungen
 
-    void setShapeColor(QColor color) {mPen.setColor(color); update(); valuechanged(); }  //setter, inline weil kurz
+    void setShapeColor(QColor color) {mPen.setColor(color); updatePixmap(); update(); }  //setter, inline weil kurz
     QColor ShapeColor() const { return mPen.color(); }             //getter, const schützt die Member vor Änderungen
 
     unsigned int getShapeIDbyName(QString name);
@@ -28,16 +28,16 @@ public:
 
     //unsigned int setShape (QString query);
 
-    void setInterval(float value) { mIntervalLength = value; update(); valuechanged(); }
+    void setInterval(float value) { mIntervalLength = value; updatePixmap(); update(); }
     float Interval() const { return mIntervalLength; }
 
-    void setScale(int scale) { mScale = scale; update(); valuechanged(); }     //int->float is ok da nur ganze werte
+    void setScale(int scale) { mScale = scale; updatePixmap(); update(); }     //int->float is ok da nur ganze werte
     float scale() const { return mScale; }
 
-    void setStepCount(int count) {mStepCount = count; update(); valuechanged(); }
+    void setStepCount(int count) {mStepCount = count; updatePixmap(); update(); }
     int stepCount () const {return mStepCount; }
 
-    void setCool(bool Cool) { optionCool = Cool; update(); valuechanged(); }
+    void setCool(bool Cool) { optionCool = Cool; updatePixmap(); update(); }
     bool Cool() const { return optionCool; }
 
     typedef struct id_name_scale_interval_steps{      //tag optional
@@ -87,7 +87,8 @@ private:
     float mIntervalLength, mPreScale;
     int mStepCount, mScale=100;
     bool optionCool, mDrawLine;
-    void valuechanged();
+
+    void updatePixmap();
 
     QPointF compute(float x);           //dispatcher based on type
     QPointF compute(float x,  float y);
