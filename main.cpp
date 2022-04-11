@@ -11,7 +11,7 @@ int main(int argc, char *argv[])
     //QApplication inherits QGuiApplication
     qDebug() << "Number of screens:" << QGuiApplication::screens().size();
     qDebug() << "Primary screen:" << QGuiApplication::primaryScreen()->name();
-    foreach (QScreen *screen, QGuiApplication::screens()) {
+    foreach (QScreen *screen, QGuiApplication::screens() ) {
         qDebug() << "manufacturer: " << screen->manufacturer() << "model: " << screen->model() << "serialNumber: " << screen->serialNumber();
         qDebug() << "Information for screen:" << screen->name();
         qDebug() << "  Available geometry:" << screen->availableGeometry().x() << screen->availableGeometry().y() << screen->availableGeometry().width() << "x" << screen->availableGeometry().height();

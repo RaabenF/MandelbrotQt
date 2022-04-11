@@ -14,9 +14,12 @@ MainWindow::MainWindow(QWidget *parent)
     modelShape->setStringList(ui.renderArea->ShapeList);    //string-list-model mShapeList
     ui.lvShape->setModel(modelShape);    // Glue model and (List)view together
 
-    //this->geometry()
-    //this->setScreen()
-    this->ui.renderArea->setShape(0);
+    //QScreen *screen = QGuiApplication::screens()[QGuiApplication::screens().size()-1];
+    //this->setScreen(screen );     //see doc, doesnt move automatic, not on virtual screens
+    this->move(-900,200);           //for debugging
+
+    //this->ui.renderArea->setShape(0);
+    this->ui.renderArea->setShape(this->ui.renderArea->getShapeIDbyName("mandel brot") );     //for debug
     update_ui();
 }
 

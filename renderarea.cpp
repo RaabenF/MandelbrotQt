@@ -37,6 +37,7 @@ RenderArea::RenderArea(QWidget *parent) :
     shapestore.append(paramShape(10,"tst",30,M_PI,256) );
     //shapestore.append(paramShape(,"",10,M_PI,256) );      //copy me
 
+
 }
 
 QSize RenderArea::minimumSizeHint() const { //recommended minimum size for the widget
@@ -255,13 +256,14 @@ QPointF RenderArea::compute_tilde(float x){
 }
 QPointF RenderArea::compute_mandelb(float x,  float y){  //, std::complex<double> *lastXval){
     //*lastXval = std::complex<double>(x, y);     //equals the Complex Number real=t * 1imag        #include <complex>
-    std::complex<double> Xvar(0,0);
-    std::complex<double> Cvar(x,y);
+    std::complex<float> Xvar(0,0);
+    std::complex<float> Cvar(x,y);      //i think float is sufficient
 
     // X(i) = (X0)² + C
     for(int i=0; i<16; i++){
         Xvar = Xvar * Xvar;     //Xval = std::pow(Xval,2);
         Xvar += Cvar;           //X+C
+        //if(Xvar.real() > 0xFFFFFF){
         if(std::isinf( Xvar.real()) ){          //break at infinity
             QPointF endv( Xvar.real(), 0  );    //return Complex Value in fpoint
             return endv;
@@ -396,7 +398,13 @@ void RenderArea::plotDrawer(QPainter *painter){
             for(int h= 0; h < tHeight; h++){
 
                 // (x,y)Plot function was added here (for the mandelbrot set)
-                painter->setPen(compute(x, y).x() );
+                qreal result = compute(x, y).x();
+                quint64 atest = (quint64)result;     //(quint64)
+                //we need the upper 3 bytes:
+                atest = atest >> ((sizeof(qreal)-3)*8 );        // -inf => 0x800000
+                //char32_t ctest = atest & 0xFFFFFF;
+
+                painter->setPen(atest );
 
                 QPointF fpoint(w, h);       //area starts at (0,0)
                 painter->drawPoint(fpoint);
