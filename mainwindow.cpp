@@ -14,6 +14,8 @@ MainWindow::MainWindow(QWidget *parent)
     modelShape->setStringList(ui.renderArea->ShapeList);    //string-list-model mShapeList
     ui.lvShape->setModel(modelShape);    // Glue model and (List)view together
 
+    //this->geometry()
+    //this->setScreen()
     this->ui.renderArea->setShape(0);
     update_ui();
 }

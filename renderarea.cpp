@@ -52,11 +52,13 @@ QSize RenderArea::sizeHint() const {        //return the preferred size of this 
 
 void RenderArea::resizeEvent(QResizeEvent *event){
     //called before paintEvent  |   event->oldSize();
-    delete mappainter;  //delete in this order
-    delete shapemap;
-    shapemap = new QPixmap(event->size() );
-    mappainter = new QPainter(shapemap);
-    plotDrawer(this->mappainter);
+    if(!mDrawLine){
+        delete mappainter;  //delete in this order
+        delete shapemap;
+        shapemap = new QPixmap(event->size() );
+        mappainter = new QPainter(shapemap);
+        plotDrawer(this->mappainter);
+    }
 }
 
 void RenderArea::mousePressEvent(QMouseEvent *event){
@@ -68,9 +70,10 @@ void RenderArea::mouseMoveEvent(QMouseEvent *event){
     if (!mMouseOldPos.isNull() ){   //event->button() == Qt::LeftButton) {
         mTempMove -= event->pos() - mMouseOldPos;
         if (mTempMove.manhattanLength() > 2){   //movement treshold
-
-            plotDrawer(this->mappainter);
-            update();                       //do a full repaint?
+            if(!mDrawLine){
+                plotDrawer(this->mappainter);
+                update();                       //do a full repaint?
+            }
         }
         mMouseOldPos = event->pos();    //globalPosition();
     }
@@ -317,10 +320,10 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
     }
     else{
         painter.setRenderHint(QPainter::Antialiasing, false);
-        //painter.setRenderHint(QPainter::TextAntialiasing, false);
-        //painter.setRenderHint(QPainter::SmoothPixmapTransform, false);
-        //painter.setRenderHint(QPainter::VerticalSubpixelPositioning, false);
-        //painter.setRenderHint(QPainter::LosslessImageRendering, false);
+        painter.setRenderHint(QPainter::TextAntialiasing, false);
+        painter.setRenderHint(QPainter::SmoothPixmapTransform, false);
+        painter.setRenderHint(QPainter::VerticalSubpixelPositioning, false);
+        painter.setRenderHint(QPainter::LosslessImageRendering, false);
 
         painter.setPen(Qt::black);
         painter.drawPixmap(this->rect(), *shapemap, shapemap->rect() );
