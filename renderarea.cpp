@@ -23,7 +23,7 @@ RenderArea::RenderArea(QWidget *parent) :
 //    for(int i=0,i<99,i++){
 //        shapestore[i]=
 //    }
-    //                          ID,Name     Prescale,Interval,Steps
+    //                          ID,Name     Prescale,Interval,Steps, (x-,y-offs)
     shapestore.append(paramShape(0,"Astroid",73,M_PI,256) );
     shapestore.append(paramShape(1,"Cycloid",11,6 * M_PI,128) );
     shapestore.append(paramShape(2,"HygensCycloid",35,2*M_PI,256) );
@@ -33,7 +33,7 @@ RenderArea::RenderArea(QWidget *parent) :
     shapestore.append(paramShape(6,"Star",20,3*M_PI,256) );
     shapestore.append(paramShape(7,"Cloud",10,14*M_PI,128) );
     shapestore.append(paramShape(8,"Tilde",55,M_PI,256,0,0) );
-    shapestore.append(paramShape(9,"Mandel Brot",1, 3, 4, -100) );   //interval empfohlen: -3..3    steps müsste count(pixel) sein?
+    shapestore.append(paramShape(9,"Mandel Brot",1, 3, 24, -100) );   //interval empfohlen: -3..3    steps ist die Auflösung der Berechnung
     shapestore.append(paramShape(10,"tst",30,M_PI,256) );
     //shapestore.append(paramShape(,"",10,M_PI,256) );      //copy me
 
@@ -149,6 +149,10 @@ unsigned int RenderArea::setShape (unsigned int row){
         mPreScale = shapestore[mShapeIndex].prescale;
         mIntervalLength = shapestore[mShapeIndex].interval;
         mStepCount = shapestore[mShapeIndex].steps;
+        mScale=100; //uncomment to keep zoom on change
+        //optionCool=false;
+        mDrawLine=false;
+
         mtMouseMove = QPoint(0,0);
         mXoffset=0, mYoffset=0;
     }
@@ -294,11 +298,11 @@ QPointF RenderArea::compute_tilde(float x){
 }
 QPointF RenderArea::compute_mandelb(float x,  float y){  //, std::complex<double> *lastXval){
     //*lastXval = std::complex<double>(x, y);     //equals the Complex Number real=t * 1imag        #include <complex>
-    std::complex<float> Xvar(0,0);
-    std::complex<float> Cvar(x,y);      //i think float is sufficient
+    std::complex<double> Xvar(0,0);
+    std::complex<double> Cvar(x,y);      //i think float is sufficient
 
     // X(i) = (X0)² + C
-    for(int i=0; i<16; i++){
+    for(int i=0; i<mStepCount; i++){
         Xvar = Xvar * Xvar;     //Xval = std::pow(Xval,2);
         Xvar += Cvar;           //X+C
         //if(Xvar.real() > 0xFFFFFF){
@@ -359,7 +363,7 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
         lineDrawer(step, tIntervLength, tScale, center, painter);
     }
     else{
-        painter.setRenderHint(QPainter::Antialiasing, false);
+        painter.setRenderHint(QPainter::Antialiasing, true);
         painter.setRenderHint(QPainter::TextAntialiasing, false);
         painter.setRenderHint(QPainter::SmoothPixmapTransform, false);
         painter.setRenderHint(QPainter::VerticalSubpixelPositioning, false);
@@ -438,6 +442,7 @@ void RenderArea::plotDrawer(QPainter *painter){
 
                 // (x,y)Plot function was added here (for the mandelbrot set)
                 qreal result = compute(x, y).x();
+
                 quint64 atest = (quint64)result;     //(quint64)
                 //we need the upper 3 bytes:
                 atest = atest >> ((sizeof(qreal)-3)*8 );        // -inf => 0x800000

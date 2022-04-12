@@ -6,7 +6,7 @@
 #include <complex>
 #include <QPixmap>
 
-class RenderArea : public QWidget
+class RenderArea : public QWidget   //RenderArea ist ein Objekt in UI
 {
     Q_OBJECT
 public:
@@ -86,7 +86,7 @@ private:
     QPen mPen;
 
     unsigned int mShapeIndex=0;
-    float mIntervalLength, mPreScale;
+    float mPreScale, mIntervalLength;
     int mStepCount, mScale=100;
     bool optionCool, mDrawLine;
     bool mMouseLB=false;
