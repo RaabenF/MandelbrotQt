@@ -37,7 +37,14 @@ RenderArea::RenderArea(QWidget *parent) :
     shapestore.append(paramShape(10,"tst",30,M_PI,256) );
     //shapestore.append(paramShape(,"",10,M_PI,256) );      //copy me
 
-
+    if(this->hasMouseTracking() ){
+        this->setMouseTracking(true);
+        qDebug("mousetracking on");
+    }else qDebug("\nmousetracking not available\n");
+}
+RenderArea::~RenderArea(){
+    delete mappainter;  //delete in this order
+    delete shapemap;
 }
 
 QSize RenderArea::minimumSizeHint() const { //recommended minimum size for the widget
@@ -51,8 +58,8 @@ QSize RenderArea::sizeHint() const {        //return the preferred size of this 
 void RenderArea::resizeEvent(QResizeEvent *event){
     //called before paintEvent  |   event->oldSize();
     if(!mDrawLine){
-        //delete mappainter;  //delete in this order
-        //delete shapemap;
+        delete mappainter;  //delete in this order
+        delete shapemap;
         shapemap = new QPixmap(event->size() );
         mappainter = new QPainter(shapemap);
         plotDrawer(this->mappainter);

@@ -21,6 +21,11 @@ MainWindow::MainWindow(QWidget *parent)
     //this->ui.renderArea->setShape(0);
     this->ui.renderArea->setShape(this->ui.renderArea->getShapeIDbyName("mandel brot") );     //for debug
     update_ui();
+
+    if(this->hasMouseTracking() ){
+        this->setMouseTracking(true);
+        qDebug("mousetracking on");
+    }else qDebug("\nmousetracking not available\n");
 }
 
 MainWindow::~MainWindow()
