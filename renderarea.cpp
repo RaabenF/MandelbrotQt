@@ -159,6 +159,8 @@ unsigned int RenderArea::setShape (unsigned int row){
     if(mShapeIndex >= getShapeIDbyName("mandel brot") ){
         mDrawLine = false;
 
+        delete mappainter;  //delete in this order
+        delete shapemap;
         shapemap = new QPixmap(this->size() );    //inherits paintdevice
         mappainter = new QPainter(shapemap);
     } else mDrawLine = true;
