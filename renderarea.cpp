@@ -8,7 +8,7 @@ RenderArea::RenderArea(QWidget *parent) :
       //init list:
     ,mBackgroundColor(Qt::darkBlue)
     ,mShapeColor(255, 255, 255)
-    ,mIntervalLength(1), mPreScale(1), mStepCount(8), optionCool(false)
+    , mPreScale(1), mIntervalLength(1), mStepCount(8), optionCool(false)
 {
 //test, geht nicht wg kein append()
 //    shapetest[0]={     //Qlist(dynamic array) - vom struct
@@ -96,20 +96,23 @@ void RenderArea::mouseReleaseEvent(QMouseEvent *event){
 
 void RenderArea::wheelEvent(QWheelEvent *event){
     //QPoint numPixels = event->pixelDelta();
+    //    if (!numPixels.isNull()) {
+    //        scrollWithPixels(numPixels);
+    //    } else
+
     int steps = event->angleDelta().y() / 120;   //one mousewheel-scroll is 15 degree long
-//    if (!numPixels.isNull()) {
-//        scrollWithPixels(numPixels);
-//    } else
     //redraw with value stored whith last mouse event (scroll to cursor)
     QPoint pos = QCursor::pos() - this->window()->pos();
     const int zoomscale = 1;
     //if(this->underMouse() ){
     if(!mDrawLine){
         if (steps>0) {
-            setScale(mScale+mScale);
+            setScale(mScale*(zoomscale+1) );
+            setStepCount(mStepCount * (zoomscale+1) );
             mtMouseMove -= (this->rect().center() - pos)/zoomscale;
         }else if(steps<0){
-            setScale(mScale/2);
+            setScale(mScale/(zoomscale+1) );
+            setStepCount(mStepCount / (zoomscale+1) );
             mtMouseMove += (this->rect().center() - pos)/zoomscale;
         }
         plotDrawer(this->mappainter);
@@ -363,7 +366,7 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
         lineDrawer(step, tIntervLength, tScale, center, painter);
     }
     else{
-        painter.setRenderHint(QPainter::Antialiasing, true);
+        painter.setRenderHint(QPainter::Antialiasing, false);
         painter.setRenderHint(QPainter::TextAntialiasing, false);
         painter.setRenderHint(QPainter::SmoothPixmapTransform, false);
         painter.setRenderHint(QPainter::VerticalSubpixelPositioning, false);

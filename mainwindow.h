@@ -19,7 +19,7 @@ public:
     MainWindow(QWidget *parent = nullptr);
     ~MainWindow();
 
-    void setStepSpinStep(unsigned int steplength);
+    void setStepSpinnerStep(unsigned int steplength);
 
 private slots:
 

@@ -35,7 +35,7 @@ public:
     void setScale(int scale) { mScale = scale; updatePixmap(); update(); }     //int->float is ok da nur ganze werte
     float scale() const { return mScale; }
 
-    void setStepCount(int count) {mStepCount = count; updatePixmap(); update(); }
+    void setStepCount(qint64 count) {mStepCount = count; updatePixmap(); update(); }
     int stepCount () const {return mStepCount; }
 
     void setCool(bool Cool) { optionCool = Cool; updatePixmap(); update(); }

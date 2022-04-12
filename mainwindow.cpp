@@ -33,7 +33,7 @@ MainWindow::~MainWindow()
     //delete ui;
 }
 
-void MainWindow::setStepSpinStep(unsigned int steplength){
+void MainWindow::setStepSpinnerStep(unsigned int steplength){
     ui.spinCount->setSingleStep(steplength);
 }
 
@@ -48,9 +48,9 @@ void MainWindow::update_ui(){
 }
 
 
-void MainWindow::on_spinCount_valueChanged(double arg1)
+void MainWindow::on_spinCount_valueChanged(double spinValue)
 {
-    this->ui.renderArea->setStepCount(arg1);
+    this->ui.renderArea->setStepCount(spinValue);
 }
 void MainWindow::on_option1_clicked(bool checked)
 {
@@ -69,7 +69,7 @@ void MainWindow::on_btnLineColor_clicked()
 }
 
 
-void MainWindow::on_slideScale_valueChanged(int value)
+void MainWindow::on_slideScale_valueChanged(int value)  //Zoom slider
 {
     this->ui.renderArea->setScale(value);
     update_ui();
@@ -89,8 +89,10 @@ void MainWindow::on_lvShape_clicked(const QModelIndex &index)   //listview click
 {
     //QString itemText = index.data(Qt::DisplayRole).toString();    //Text des List Items
     ui.renderArea->setShape(index.row() );
-    if(ui.renderArea->getActShapeID() == ui.renderArea->getShapeIDbyName("mandel brot") ) setStepSpinStep(1);
-    else setStepSpinStep(8);
+    //set resolution of the step spinner
+    if(ui.renderArea->getActShapeID() >= ui.renderArea->getShapeIDbyName("mandel brot") ) setStepSpinnerStep(1);
+    else setStepSpinnerStep(8);
+
     update_ui();
 }
 
