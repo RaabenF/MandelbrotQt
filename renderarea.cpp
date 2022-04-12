@@ -64,27 +64,58 @@ void RenderArea::resizeEvent(QResizeEvent *event){
         mappainter = new QPainter(shapemap);
         plotDrawer(this->mappainter);
     }
+
+    event->accept();
 }
 
 void RenderArea::mousePressEvent(QMouseEvent *event){
     if (event->button() == Qt::LeftButton) {
-        mMouseOldPos = event->pos();   //position().toPoint();
+        mMousePos = event->pos();   //position().toPoint();
     }
+    mMouseLB=true;//event->ignore(); doesnt work
 }
+
 void RenderArea::mouseMoveEvent(QMouseEvent *event){
-    if (!mMouseOldPos.isNull() ){   //event->button() == Qt::LeftButton) {
-        mTempMove -= event->pos() - mMouseOldPos;
-        if (mTempMove.manhattanLength() > 2){   //movement treshold
+    //drag while clicking (mousebutton event doesnt work here)
+    if ( !mMousePos.isNull() && mMouseLB ){
+        mtMouseMove -= event->pos() - mMousePos;
+        if (mtMouseMove.manhattanLength() > 2){   //movement treshold
             if(!mDrawLine){
                 plotDrawer(this->mappainter);
                 update();
             }
         }
-        mMouseOldPos = event->pos();    //globalPosition();
     }
+    mMousePos = event->pos();    //rel to widget or: globalPosition();
+    event->accept();
 }
-void RenderArea::mouseReleaseEvent(QMouseEvent *event){
 
+void RenderArea::mouseReleaseEvent(QMouseEvent *event){
+    mMouseLB = false;
+}
+
+void RenderArea::wheelEvent(QWheelEvent *event){
+    //QPoint numPixels = event->pixelDelta();
+    int steps = event->angleDelta().y() / 120;   //one mousewheel-scroll is 15 degree long
+//    if (!numPixels.isNull()) {
+//        scrollWithPixels(numPixels);
+//    } else
+    //redraw with value stored whith last mouse event (scroll to cursor)
+    QPoint pos = QCursor::pos() - this->window()->pos();
+    const int zoomscale = 1;
+    //if(this->underMouse() ){
+    if(!mDrawLine){
+        if (steps>0) {
+            setScale(mScale+mScale);
+            mtMouseMove -= (this->rect().center() - pos)/zoomscale;
+        }else if(steps<0){
+            setScale(mScale/2);
+            mtMouseMove += (this->rect().center() - pos)/zoomscale;
+        }
+        plotDrawer(this->mappainter);
+    }
+    update();
+    event->accept();
 }
 
 RenderArea::ShapeType RenderArea::paramShape(unsigned int id, QString name, float preScale, float interval, int steps, float Xoffset, float Yoffset ){
@@ -118,7 +149,7 @@ unsigned int RenderArea::setShape (unsigned int row){
         mPreScale = shapestore[mShapeIndex].prescale;
         mIntervalLength = shapestore[mShapeIndex].interval;
         mStepCount = shapestore[mShapeIndex].steps;
-        mTempMove = QPoint(0,0);
+        mtMouseMove = QPoint(0,0);
         mXoffset=0, mYoffset=0;
     }
     else{
@@ -374,7 +405,7 @@ void RenderArea::plotDrawer(QPainter *painter){
 
     int tWidth = this->width();
     int tHeight = this->height();
-    QPoint tArea = QPoint(this->width(), this->height() );
+    //QPoint tArea = QPoint(this->width(), this->height() );
 
     const float yInterval = tIntervLength * tHeight/tWidth;
     const QPointF step = QPointF(tIntervLength/tWidth / tScale,        // *step scales a pix value to Interval-Units
@@ -387,9 +418,10 @@ void RenderArea::plotDrawer(QPainter *painter){
 
 
     // 2. this 2nd offset is added to the point-of-view, the step component represents the actual scale which is added in permanently
-    mXoffset += (mTempMove.x() * step.x() );
-    mYoffset += (mTempMove.y() * step.y() );
-    mTempMove = QPoint(0,0);
+    //
+    mXoffset += (mtMouseMove.x() * step.x() );
+    mYoffset += (mtMouseMove.y() * step.y() );
+    mtMouseMove = QPoint(0,0);
 
     float x = xStartOffset + mXoffset;
     // 3. add the remaining half of the area-in-sight to the offsets, that equates to the final starting point

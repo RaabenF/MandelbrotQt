@@ -69,7 +69,8 @@ protected:
     void mousePressEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
-    QPoint mMouseOldPos = QPoint(0,0), mTempMove;
+    void wheelEvent(QWheelEvent *event) override;
+    QPoint mMousePos = QPoint(0,0), mtMouseMove;
     float mXoffset=0, mYoffset=0;               //valid till setShape()
 
 
@@ -88,6 +89,7 @@ private:
     float mIntervalLength, mPreScale;
     int mStepCount, mScale=100;
     bool optionCool, mDrawLine;
+    bool mMouseLB=false;
 
     void updatePixmap();
 
