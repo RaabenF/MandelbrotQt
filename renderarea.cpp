@@ -33,7 +33,7 @@ RenderArea::RenderArea(QWidget *parent) :
     shapestore.append(paramShape(6,"Star",20,3*M_PI,256) );
     shapestore.append(paramShape(7,"Cloud",10,14*M_PI,128) );
     shapestore.append(paramShape(8,"Tilde",55,M_PI,256,0,0) );
-    shapestore.append(paramShape(9,"Mandel Brot",1, 3, 24, -100) );   //interval empfohlen: -3..3    steps ist die Auflösung der Berechnung
+    shapestore.append(paramShape(9,"Mandel Brot",1, 3, 64, -100) );   //interval empfohlen: -3..3    steps ist die Auflösung der Berechnung
     shapestore.append(paramShape(10,"tst",30,M_PI,256) );
     //shapestore.append(paramShape(,"",10,M_PI,256) );      //copy me
 
@@ -108,11 +108,11 @@ void RenderArea::wheelEvent(QWheelEvent *event){
     if(!mDrawLine){
         if (steps>0) {
             setScale(mScale*(zoomscale+1) );
-            setStepCount(mStepCount * (zoomscale+1) );
+            if(mScaleSteps)setStepCount(mStepCount * (zoomscale+1) );
             mtMouseMove -= (this->rect().center() - pos)/zoomscale;
         }else if(steps<0){
             setScale(mScale/(zoomscale+1) );
-            setStepCount(mStepCount / (zoomscale+1) );
+            if(mScaleSteps)setStepCount(mStepCount / (zoomscale+1) );
             mtMouseMove += (this->rect().center() - pos)/zoomscale;
         }
         plotDrawer(this->mappainter);
@@ -299,10 +299,11 @@ QPointF RenderArea::compute_cloud(float x){
 QPointF RenderArea::compute_tilde(float x){
     return QPointF( x + sin(x), 0.5*x + cos(100*x) );
 }
+
 QPointF RenderArea::compute_mandelb(float x,  float y){  //, std::complex<double> *lastXval){
     //*lastXval = std::complex<double>(x, y);     //equals the Complex Number real=t * 1imag        #include <complex>
     std::complex<double> Xvar(0,0);
-    std::complex<double> Cvar(x,y);      //i think float is sufficient
+    std::complex<double> Cvar(x,y);      //float looks nice, too
 
     // X(i) = (X0)² + C
     for(int i=0; i<mStepCount; i++){
@@ -310,13 +311,15 @@ QPointF RenderArea::compute_mandelb(float x,  float y){  //, std::complex<double
         Xvar += Cvar;           //X+C
         //if(Xvar.real() > 0xFFFFFF){
         if(std::isinf( Xvar.real()) ){          //break at infinity
-            QPointF endv( Xvar.real(), 0  );    //return Complex Value in fpoint
+            QPointF endv( Xvar.real(), i  );    //return Complex Value in fpoint
             return endv;
         }
     }
-    QPointF endv( Xvar.real(), Xvar.imag()  );    //return Complex Value in fpoint
+    //std::abs(Xvar)
+    QPointF endv( std::arg(Xvar), mStepCount); // Xvar.imag()  );    //return Complex Value, and Iterations, in fpoint
     return endv;
 }
+
 
 QPoint RenderArea::compute_mandelb(int x,  int y){  //only float double and longdouble are guaranteed in std::complex
     float a=x, b=y;
@@ -329,11 +332,11 @@ QPoint RenderArea::compute_mandelb(int x,  int y){  //only float double and long
         Xvar = Xvar * Xvar;     //Xval = std::pow(Xval,2);
         Xvar += Cvar;           //X+C
         if(std::isinf( Xvar.real()) ){          //break at infinity
-            QPoint endv( Xvar.real(), 0  );    //return Complex Value in fpoint
+            QPoint endv( Xvar.real()*1000, i  );    //return Complex Value
             return endv;
         }
     }
-    QPoint endv( Xvar.real(), Xvar.imag()  );    //return Complex Value in fpoint
+    QPoint endv( Xvar.real(), mStepCount  );    //return Complex Value in fpoint
     return endv;
 }
 
@@ -434,44 +437,72 @@ void RenderArea::plotDrawer(QPainter *painter){
     // 3. add the remaining half of the area-in-sight to the offsets, that equates to the final starting point
     x = x - tIntervLength/2 /tScale;
 
-    if(true){      //float calculation
-        for(int w= 0; w < tWidth; w++){
-            //y = -1.5;   //debug
+    for(int w= 0; w < tWidth; w++){
+        //y = -1.5;   //debug
 
-            float y = yStartOffset + mYoffset;
-            y = y - yInterval/2 /tScale;
+        float y = yStartOffset + mYoffset;
+        y = y - yInterval/2 /tScale;
 
-            for(int h= 0; h < tHeight; h++){
+        for(int h= 0; h < tHeight; h++){
 
-                // (x,y)Plot function was added here (for the mandelbrot set)
-                qreal result = compute(x, y).x();
+            if(true){//set float calculation (false = int calc)
 
-                quint64 atest = (quint64)result;     //(quint64)
+                QPointF result = compute(x, y);
+                float Rcompl = result.x()*255;   //real part of Complex Number
+                float steps = result.y();    //iterations of the fractal?
+
+                //step stays '0' for most results (for negativ and 0.0xxx)
+                //int Rint = (typeof(Rint))Rcompl;
+                unsigned int Ruint = Rcompl;
+                //Ruint <<= 2;
+                //Ruint = 255 - Ruint;
+
+                //step is always positive
+                int stepI = steps;
+
+
+                //quint64 int64R = (quint64)Rcompl;
+                //int btest = steps;     //(quint64)
+                //btest *= 100;
+                //btest %= 255;
+
                 //we need the upper 3 bytes:
-                atest = atest >> ((sizeof(qreal)-3)*8 );        // -inf => 0x800000
+                //int64R = int64R >> ((sizeof(qreal)-3)*8 );        // -inf => 0x800000
+                //Ruint = Ruint >> ((sizeof(Ruint)-3)*8 );        // -inf => 0x800000
+                //btest = btest >> ((sizeof(qreal)-3)*8 );        // -inf => 0x800000
                 //char32_t ctest = atest & 0xFFFFFF;
 
-                painter->setPen(atest );
+                //set some variables in here for coloration. it is basically best TO USE THE # OF STEPS till break
+                QRgb color = qRgb( Ruint, Ruint, stepI);    //255,R,G,B
+                painter->setPen(color);
 
-                QPointF fpoint(w, h);       //area starts at (0,0)
-                painter->drawPoint(fpoint);
-                y += step.y();
 
-            }//X-loop
-            x += step.x();
 
-        }//Y-loop
-    } else {        //int calculation test
-        for(int w= 0; w < tWidth; w++){
-            for(int h= 0; h < tHeight; h++){
-                // (x,y)Plot function was added here (for the mandelbrot set)
-                painter->setPen(compute(w-tWidth/2, h-tHeight/2).x() );        //pass int values to complex-float
 
-                QPointF fpoint(w, h);       //area starts at (0,0)
-                painter->drawPoint(fpoint);
-            }//X-loop
-        }//Y-loop
-    }
+
+
+
+            }else{
+
+                //int calculation is useless on mandel so far
+                QPointF result = compute((int)(x*1000), (int)(y*1000) );
+                char Rcompl = result.x();   //real part of Complex Number
+                char steps = result.y();    //iterations of the fractal?
+
+                QColor colorart( Rcompl, steps, 255-steps, 255);    //0xRRGGBBAA
+                painter->setPen(colorart);
+            }
+
+
+            QPointF fpoint(w, h);       //area starts at (0,0)
+            painter->drawPoint(fpoint);
+            y += step.y();
+
+        }//X-loop
+        x += step.x();
+
+    }//Y-loop
+
 }
 
 

@@ -89,8 +89,10 @@ private:
     float mPreScale, mIntervalLength;
     int mStepCount;
     qint64 mScale=100;    //maybe convert to exponential, longlongint. type is guaranteed 64-bit on all platforms supported by Qt
+
     bool optionCool, mDrawLine;
     bool mMouseLB=false;
+    const bool mScaleSteps = false;
 
     void updatePixmap();
 
