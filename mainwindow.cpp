@@ -16,7 +16,8 @@ MainWindow::MainWindow(QWidget *parent)
 
     //QScreen *screen = QGuiApplication::screens()[QGuiApplication::screens().size()-1];
     //this->setScreen(screen );     //see doc, doesnt move automatic, not on virtual screens
-    this->move(-900,200);           //for debugging
+
+    //this->move(-900,200);           //for debugging
 
     //this->ui.renderArea->setShape(0);
     this->ui.renderArea->setShape(this->ui.renderArea->getShapeIDbyName("mandel brot") );     //for debug
@@ -91,7 +92,7 @@ void MainWindow::on_lvShape_clicked(const QModelIndex &index)   //listview click
     ui.renderArea->setShape(index.row() );
     //set resolution of the step spinner
     if(ui.renderArea->getActShapeID() >= ui.renderArea->getShapeIDbyName("mandel brot") ) setStepSpinnerStep(1);
-    else setStepSpinnerStep(8);
+    else setStepSpinnerStep(32);
 
     update_ui();
 }

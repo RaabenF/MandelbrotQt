@@ -33,7 +33,7 @@ RenderArea::RenderArea(QWidget *parent) :
     shapestore.append(paramShape(6,"Star",20,3*M_PI,256) );
     shapestore.append(paramShape(7,"Cloud",10,14*M_PI,128) );
     shapestore.append(paramShape(8,"Tilde",55,M_PI,256,0,0) );
-    shapestore.append(paramShape(9,"Mandel Brot",1, 3, 64, -100) );   //interval empfohlen: -3..3    steps ist die Auflösung der Berechnung
+    shapestore.append(paramShape(9,"Mandel Brot",1, 3, 32, -100) );   //interval empfohlen: -3..3    steps ist die Auflösung der Berechnung
     shapestore.append(paramShape(10,"tst",30,M_PI,256) );
     //shapestore.append(paramShape(,"",10,M_PI,256) );      //copy me
 
@@ -311,12 +311,14 @@ QPointF RenderArea::compute_mandelb(float x,  float y){  //, std::complex<double
         Xvar += Cvar;           //X+C
         //if(Xvar.real() > 0xFFFFFF){
         if(std::isinf( Xvar.real()) ){          //break at infinity
-            QPointF endv( Xvar.real(), i  );    //return Complex Value in fpoint
+            QPointF endv( 0, i  );    //return Complex Value in fpoint
+            //QPointF endv( 0, i  );    //return Complex Value in fpoint
             return endv;
         }
     }
-    //std::abs(Xvar)
-    QPointF endv( std::arg(Xvar), mStepCount); // Xvar.imag()  );    //return Complex Value, and Iterations, in fpoint
+    //std::abs(Xvar) std::arg(Xvar)     arg=angular=phase angle
+    QPointF endv( std::abs(Xvar), mStepCount);    //return Complex Value, and Iterations, in fpoint
+    //QPointF endv( Xvar.imag(), mStepCount);     //return Complex Value, and Iterations, in fpoint
     return endv;
 }
 
@@ -331,12 +333,12 @@ QPoint RenderArea::compute_mandelb(int x,  int y){  //only float double and long
     for(int i=0; i<mStepCount; i++){
         Xvar = Xvar * Xvar;     //Xval = std::pow(Xval,2);
         Xvar += Cvar;           //X+C
-        if(std::isinf( Xvar.real()) ){          //break at infinity
-            QPoint endv( Xvar.real()*1000, i  );    //return Complex Value
+        if(std::isinf( Xvar.imag()) ){          //break at infinity
+            QPoint endv( Xvar.imag()*1000, i  );    //return Complex Value
             return endv;
         }
     }
-    QPoint endv( Xvar.real(), mStepCount  );    //return Complex Value in fpoint
+    QPoint endv( Xvar.imag(), mStepCount  );    //return Complex Value in fpoint
     return endv;
 }
 
@@ -448,23 +450,19 @@ void RenderArea::plotDrawer(QPainter *painter){
             if(true){//set float calculation (false = int calc)
 
                 QPointF result = compute(x, y);
-                float Rcompl = result.x()*255;   //real part of Complex Number
-                float steps = result.y();    //iterations of the fractal?
+                float Rcompl = result.x();   //abs-length of Complex Number
+                float iter = result.y()/mStepCount*255;    //iterations of the fractal?
 
-                //step stays '0' for most results (for negativ and 0.0xxx)
-                //int Rint = (typeof(Rint))Rcompl;
-                unsigned int Ruint = Rcompl;
+                //qDebug()<<Rcompl;
+                //modulo is not good. use two complement colors. more iterations then advance contrast and detail
+                int Rint = Rcompl*200;       //*100...500 for abs, absolute length is always positive
                 //Ruint <<= 2;
                 //Ruint = 255 - Ruint;
 
                 //step is always positive
-                int stepI = steps;
+                int stepI = iter;
 
-
-                //quint64 int64R = (quint64)Rcompl;
-                //int btest = steps;     //(quint64)
-                //btest *= 100;
-                //btest %= 255;
+                //if(iter==mStepCount)stepI=Rint;
 
                 //we need the upper 3 bytes:
                 //int64R = int64R >> ((sizeof(qreal)-3)*8 );        // -inf => 0x800000
@@ -473,7 +471,7 @@ void RenderArea::plotDrawer(QPainter *painter){
                 //char32_t ctest = atest & 0xFFFFFF;
 
                 //set some variables in here for coloration. it is basically best TO USE THE # OF STEPS till break
-                QRgb color = qRgb( Ruint, Ruint, stepI);    //255,R,G,B
+                QRgb color = qRgb( Rint, 0, stepI);    //255,R,G,B
                 painter->setPen(color);
 
 
@@ -486,7 +484,7 @@ void RenderArea::plotDrawer(QPainter *painter){
 
                 //int calculation is useless on mandel so far
                 QPointF result = compute((int)(x*1000), (int)(y*1000) );
-                char Rcompl = result.x();   //real part of Complex Number
+                char Rcompl = result.x();   //length of Complex Number
                 char steps = result.y();    //iterations of the fractal?
 
                 QColor colorart( Rcompl, steps, 255-steps, 255);    //0xRRGGBBAA
