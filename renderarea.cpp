@@ -471,7 +471,7 @@ void RenderArea::plotDrawer(QPainter *painter){
                 //char32_t ctest = atest & 0xFFFFFF;
 
                 //set some variables in here for coloration. it is basically best TO USE THE # OF STEPS till break
-                QRgb color = qRgb( Rint, 0, stepI);    //255,R,G,B
+                QRgb color = qRgb( Rint, stepI, 255-stepI);    //255,R,G,B
                 painter->setPen(color);
 
 
