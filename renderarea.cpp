@@ -103,7 +103,7 @@ void RenderArea::wheelEvent(QWheelEvent *event){
     int steps = event->angleDelta().y() / 120;   //one mousewheel-scroll is 15 degree long
     //redraw with value stored whith last mouse event (scroll to cursor)
     QPoint pos = QCursor::pos() - this->window()->pos();
-    const float zoomscale = 1.05;
+    const float zoomscale = 1.1;
     //if(this->underMouse() ){
     if(!mDrawLine){
         if (steps>0) {
@@ -452,7 +452,12 @@ void RenderArea::plotDrawer(QPainter *painter){
 
                 QPointF result = compute(x, y);
                 float Rcompl = result.x();   //abs-length of Complex Number
-                float iter = result.y()/mStepCount*255;    //iterations of the fractal?
+                //iterations scaled to color#
+                //float iter = result.y()/mStepCount*255;    //iterations of the fractal?
+                float i = result.y() / ((float)mStepCount) * 0xffffff;
+                unsigned int iter = i;
+                char r = iter>>16 & 0xff, g = iter>>8 & 0xff ,b = iter & 0xff;
+
 
                 //qDebug()<<Rcompl;
                 //modulo is not good. use two complement colors. more iterations then advance contrast and detail
@@ -460,19 +465,17 @@ void RenderArea::plotDrawer(QPainter *painter){
                 //Ruint <<= 2;
                 //Ruint = 255 - Ruint;
 
-                //step is always positive
-                int stepI = iter;
-
-                //if(iter==mStepCount)stepI=Rint;
-
                 //we need the upper 3 bytes:
                 //int64R = int64R >> ((sizeof(qreal)-3)*8 );        // -inf => 0x800000
                 //Ruint = Ruint >> ((sizeof(Ruint)-3)*8 );        // -inf => 0x800000
                 //btest = btest >> ((sizeof(qreal)-3)*8 );        // -inf => 0x800000
                 //char32_t ctest = atest & 0xFFFFFF;
 
-                //set some variables in here for coloration. it is basically best TO USE THE # OF STEPS till break
-                QRgb color = qRgb( Rint, stepI, 128-stepI);    //255,R,G,B
+                //set some variables in here for coloration.
+                //basic is TO USE THE # OF STEPS till break
+                //the length(complex) causes some variation
+                //QRgb color = qRgb( 0, iter, 128-iter);    //255,R,G,B
+                QRgb color = qRgb( r, g, b);    //255,R,G,B
                 painter->setPen(color);
 
 
