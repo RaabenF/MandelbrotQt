@@ -92,7 +92,7 @@ private:
 
     bool optionCool, mDrawLine;
     bool mMouseLB=false;
-    const bool mScaleSteps = false;
+    const bool mScaleSteps = true;
 
     void updatePixmap();
 

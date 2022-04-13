@@ -33,7 +33,7 @@ RenderArea::RenderArea(QWidget *parent) :
     shapestore.append(paramShape(6,"Star",20,3*M_PI,256) );
     shapestore.append(paramShape(7,"Cloud",10,14*M_PI,128) );
     shapestore.append(paramShape(8,"Tilde",55,M_PI,256,0,0) );
-    shapestore.append(paramShape(9,"Mandel Brot",1, 3, 32, -100) );   //interval empfohlen: -3..3    steps ist die Auflösung der Berechnung
+    shapestore.append(paramShape(9,"Mandel Brot",1, 3, 64, -100) );   //interval empfohlen: -3..3    steps ist die Auflösung der Berechnung
     shapestore.append(paramShape(10,"tst",30,M_PI,256) );
     //shapestore.append(paramShape(,"",10,M_PI,256) );      //copy me
 
@@ -79,7 +79,7 @@ void RenderArea::mouseMoveEvent(QMouseEvent *event){
     //drag while clicking (mousebutton event doesnt work here)
     if ( !mMousePos.isNull() && mMouseLB ){
         mtMouseMove -= event->pos() - mMousePos;
-        if (mtMouseMove.manhattanLength() > 2){   //movement treshold
+        if (mtMouseMove.manhattanLength() > 3){   //movement treshold
             if(!mDrawLine){
                 plotDrawer(this->mappainter);
                 update();
@@ -103,19 +103,20 @@ void RenderArea::wheelEvent(QWheelEvent *event){
     int steps = event->angleDelta().y() / 120;   //one mousewheel-scroll is 15 degree long
     //redraw with value stored whith last mouse event (scroll to cursor)
     QPoint pos = QCursor::pos() - this->window()->pos();
-    const int zoomscale = 1;
+    const float zoomscale = 1.05;
     //if(this->underMouse() ){
     if(!mDrawLine){
         if (steps>0) {
-            setScale(mScale*(zoomscale+1) );
-            if(mScaleSteps)setStepCount(mStepCount * (zoomscale+1) );
-            mtMouseMove -= (this->rect().center() - pos)/zoomscale;
+            if(mScaleSteps)setStepCount(mStepCount * (zoomscale) );
+            mtMouseMove -= (this->rect().center() - pos);
+            setScale(mScale*2 );
         }else if(steps<0){
-            setScale(mScale/(zoomscale+1) );
-            if(mScaleSteps)setStepCount(mStepCount / (zoomscale+1) );
-            mtMouseMove += (this->rect().center() - pos)/zoomscale;
+            if(mScaleSteps)setStepCount(mStepCount / (zoomscale) );
+            mtMouseMove += (this->rect().center() - pos)/2;
+            setScale(mScale/2 );
+            //setScale calls updatePixmap()->plotDrawer()
         }
-        plotDrawer(this->mappainter);
+        //plotDrawer(this->mappainter);
     }
     update();
     event->accept();
@@ -471,7 +472,7 @@ void RenderArea::plotDrawer(QPainter *painter){
                 //char32_t ctest = atest & 0xFFFFFF;
 
                 //set some variables in here for coloration. it is basically best TO USE THE # OF STEPS till break
-                QRgb color = qRgb( Rint, stepI, 255-stepI);    //255,R,G,B
+                QRgb color = qRgb( Rint, stepI, 128-stepI);    //255,R,G,B
                 painter->setPen(color);
 
 
