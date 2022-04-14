@@ -75,7 +75,7 @@ protected:
 
 
 signals:
-    void stepChanged();
+    void stepChanged(bool state=true);
 
 private:
     QList<ShapeType> shapestore;     //dynamische Qliste des structs, kann wie c array verwendet werden

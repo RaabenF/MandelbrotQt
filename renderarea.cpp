@@ -115,7 +115,8 @@ void RenderArea::wheelEvent(QWheelEvent *event){
         //plotDrawer(this->mappainter);
     }
     update();
-    emit stepChanged();
+    emit this->stepChanged(true);
+
     event->accept();
 }
 
