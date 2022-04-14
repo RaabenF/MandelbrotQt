@@ -3,6 +3,14 @@
 #include <QPainter>
 #include "mainwindow.h"
 
+class HelloWorldTask : public QRunnable
+{
+    void run() override
+    {
+        qDebug() << "Hello world from thread" << QThread::currentThread();
+    }
+};
+
 RenderArea::RenderArea(QWidget *parent) :
     QWidget(parent)
       //init list:
@@ -37,6 +45,9 @@ RenderArea::RenderArea(QWidget *parent) :
     shapestore.append(paramShape(10,"tst",30,M_PI,256) );
     //shapestore.append(paramShape(,"",10,M_PI,256) );      //copy me
 
+    HelloWorldTask *hello = new HelloWorldTask();
+    // QThreadPool takes ownership and deletes 'hello' automatically
+    QThreadPool::globalInstance()->start(hello);
 }
 RenderArea::~RenderArea(){
     delete mappainter;  //delete in this order
@@ -115,7 +126,7 @@ void RenderArea::wheelEvent(QWheelEvent *event){
         //plotDrawer(this->mappainter);
     }
     update();
-    emit this->stepChanged();
+    emit this->stepsChanged();
 
     event->accept();
 }
@@ -370,6 +381,7 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
         lineDrawer(step, tIntervLength, tScale, center, painter);
     }
     else{
+        //the plotDrawer()-funcs are drawn asynchronous to a pixmap
         painter.setRenderHint(QPainter::Antialiasing, false);
         painter.setRenderHint(QPainter::TextAntialiasing, false);
         painter.setRenderHint(QPainter::SmoothPixmapTransform, false);
@@ -377,10 +389,8 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
         painter.setRenderHint(QPainter::LosslessImageRendering, false);
 
         painter.setPen(Qt::black);
-        painter.drawPixmap(this->rect(), *shapemap, shapemap->rect() );
+        painter.drawPixmap(this->rect(), *shapemap, shapemap->rect() ); //target Area, pixmap source, source Area
     }
-
-
 
     //durchläufe for() interval(256*2)+0+anfang+ende; 515
     //GESAMT DURCHLÄUFE 5, evtl wegen oversampling? -> ohne antialiasing 4
@@ -440,13 +450,12 @@ void RenderArea::plotDrawer(QPainter *painter){
 
     for(int w= 0; w < tWidth; w++){
         //y = -1.5;   //debug
-
         float y = yStartOffset + mYoffset;
         y = y - yInterval/2 /tScale;
 
         for(int h= 0; h < tHeight; h++){
 
-            if(true){//set float calculation (false = int calc)
+            if(true){//set float calculation (not int calc = false)
                 QPointF result = compute(x, y);
 
                 //iterations of the fractal scaled to color#   //modulo is useless, overflow does the same mostly.
@@ -467,8 +476,7 @@ void RenderArea::plotDrawer(QPainter *painter){
                 painter->setPen(color);
 
             }else{
-
-                //int calculation is useless on mandel so far
+                //int calculation is useless on mandel so far:
                 QPointF result = compute((int)(x*1000), (int)(y*1000) );
                 char Rcompl = result.x();   //length of Complex Number
                 char steps = result.y();    //iterations of the fractal?
@@ -476,15 +484,11 @@ void RenderArea::plotDrawer(QPainter *painter){
                 QColor colorart( Rcompl, steps, 255-steps, 255);    //0xRRGGBBAA
                 painter->setPen(colorart);
             }
-
-
             QPointF fpoint(w, h);       //area starts at (0,0)
             painter->drawPoint(fpoint);
             y += step.y();
-
         }//X-loop
         x += step.x();
-
     }//Y-loop
 
 }

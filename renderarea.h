@@ -69,13 +69,15 @@ protected:
     void mousePressEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
+#if QT_CONFIG(wheelevent)
     void wheelEvent(QWheelEvent *event) override;
+#endif
     QPoint mMousePos = QPoint(0,0), mtMouseMove;
     float mXoffset=0, mYoffset=0;               //valid till setShape()
 
 
 signals:
-    void stepChanged();
+    void stepsChanged();
 
 private:
     QList<ShapeType> shapestore;     //dynamische Qliste des structs, kann wie c array verwendet werden

@@ -5,7 +5,8 @@
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
-    ,ui(new Ui::MainWindow)    //olad form, with arg: parent
+    ,ui(new Ui::MainWindow)    //load form, with arg: parent
+    //RenderArea is implemented through UI
     ,modelShape(new QStringListModel(this) )
 {
     ui->setupUi(this);      //setup form
@@ -28,8 +29,7 @@ MainWindow::MainWindow(QWidget *parent)
         qDebug("mousetracking on");
     }else qDebug("mousetracking not available\n");
 
-    connect(ui->renderArea, SIGNAL(stepChanged() ),
-            this, SLOT(on_steps_changed()) );
+    connect(ui->renderArea, SIGNAL(stepsChanged() ), this, SLOT(on_steps_changed()) );
     update_ui();
 }
 
