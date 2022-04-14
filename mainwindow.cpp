@@ -10,6 +10,8 @@ MainWindow::MainWindow(QWidget *parent)
     ui.setupUi(this);      //setup form
     //this->setAttribute(Qt::WA_TranslucentBackground);
 
+    connect(ui.renderArea, SIGNAL(&ui.renderArea->stepChanged() ), this, SLOT(this->on_steps_changed()) );
+
     // Populate our model of Shaplist for the scrollable Menulist
     modelShape->setStringList(ui.renderArea->ShapeList);    //string-list-model mShapeList
     ui.lvShape->setModel(modelShape);    // Glue model and (List)view together
@@ -34,6 +36,7 @@ MainWindow::~MainWindow()
     //delete ui;
 }
 
+
 void MainWindow::setStepSpinnerStep(unsigned int steplength){
     ui.spinCount->setSingleStep(steplength);
 }
@@ -46,6 +49,8 @@ void MainWindow::update_ui(){
 
     this->ui.lcdInterval->display(this->ui.renderArea->Interval() );
     this->ui.slideInterval->setValue(10 * this->ui.renderArea->Interval() );      //int max 200/10    int slider zu float konvert
+
+    this->ui.spinCount->setValue(this->ui.renderArea->stepCount() );
 }
 
 
@@ -96,4 +101,8 @@ void MainWindow::on_lvShape_clicked(const QModelIndex &index)   //listview click
 
     update_ui();
 }
+
+void MainWindow::on_steps_changed(){
+    update_ui();
+};
 

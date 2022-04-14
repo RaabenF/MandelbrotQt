@@ -37,6 +37,8 @@ private slots:
 
     void on_lvShape_clicked(const QModelIndex &index);
 
+    void on_steps_changed();
+
 
 private:
     //Ui::MainWindow *ui;   //ist gleich:
