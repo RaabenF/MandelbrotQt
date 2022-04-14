@@ -5,7 +5,7 @@
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
-    ,ui(new Ui::MainWindow)    //olad form, with arg: parent
+    ,ui(new Ui::MainWindow)    //formdatei laden
     ,modelShape(new QStringListModel(this) )
 {
     ui->setupUi(this);      //setup form
@@ -28,8 +28,7 @@ MainWindow::MainWindow(QWidget *parent)
         qDebug("mousetracking on");
     }else qDebug("\nmousetracking not available\n");
 
-    connect(ui->renderArea, SIGNAL(ui->renderArea->stepChanged() ) ,
-            this, SLOT(this->on_steps_changed()) );
+    connect(ui->renderArea, SIGNAL(ui->renderArea->stepChanged(bool) ),this, SLOT(this->on_steps_changed(bool)) );
     update_ui();
 }
 
@@ -104,7 +103,7 @@ void MainWindow::on_lvShape_clicked(const QModelIndex &index)   //listview click
     update_ui();
 }
 
-void MainWindow::on_steps_changed(){
-    update_ui();
+void MainWindow::on_steps_changed(bool state){
+    if(state)update_ui();
 };
 
