@@ -7,9 +7,9 @@
 
 #include <ui_mainwindow.h>  //versucht ohne namespace Ui zu machen, geht
 
-//QT_BEGIN_NAMESPACE
-//namespace Ui { class MainWindow; }
-//QT_END_NAMESPACE
+QT_BEGIN_NAMESPACE
+namespace Ui { class MainWindow; }
+QT_END_NAMESPACE
 
 class MainWindow : public QMainWindow
 {

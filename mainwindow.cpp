@@ -1,6 +1,7 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include <QColorDialog>
+#include <QScreen>
 
 MainWindow::MainWindow(QWidget *parent)
     : QMainWindow(parent)
@@ -9,31 +10,31 @@ MainWindow::MainWindow(QWidget *parent)
 {
     ui->setupUi(this);      //setup form
     //this->setAttribute(Qt::WA_TranslucentBackground);
-
-    connect(ui->renderArea, SIGNAL(&ui->renderArea->stepChanged() ), this, SLOT(this->on_steps_changed()) );
+    //this->move(-900,200);           //place window
+    //this->ui->renderArea->setShape(0);
 
     // Populate our model of Shaplist for the scrollable Menulist
     modelShape->setStringList(ui->renderArea->ShapeList);    //string-list-model mShapeList
     ui->lvShape->setModel(modelShape);    // Glue model and (List)view together
 
+    //debugging stuff:
+    QScreen *screen = QGuiApplication::screens()[0];    //doesnt matter wich screen, with virtual desktop
+    this->move(screen->availableGeometry().width() - this->width(), screen->availableGeometry().height() -this->height() );
+    this->ui->renderArea->setShape(this->ui->renderArea->getShapeIDbyName("mandel brot") );
     //QScreen *screen = QGuiApplication::screens()[QGuiApplication::screens().size()-1];
     //this->setScreen(screen );     //see doc, doesnt move automatic, not on virtual screens
-
-    //this->move(-900,200);           //for debugging
-
-    //this->ui->renderArea->setShape(0);
-    this->ui->renderArea->setShape(this->ui->renderArea->getShapeIDbyName("mandel brot") );     //for debug
-    update_ui();
-
     if(this->hasMouseTracking() ){
         this->setMouseTracking(true);
         qDebug("mousetracking on");
     }else qDebug("\nmousetracking not available\n");
+
+    connect(ui->renderArea, SIGNAL(ui->renderArea->stepChanged() ), this, SLOT(this->on_steps_changed()) );
+    update_ui();
 }
 
 MainWindow::~MainWindow()
 {
-    //delete ui;
+    delete ui;
 }
 
 
