@@ -5,11 +5,12 @@
 //#include <qtreeview.h>
 #include <QStringListModel>
 
-#include <ui_mainwindow.h>  //versucht ohne namespace Ui zu machen, geht
+#include <ui_mainwindow.h>
 
-QT_BEGIN_NAMESPACE
-namespace Ui { class MainWindow; }
-QT_END_NAMESPACE
+//ohne namespace Ui geht auch
+//QT_BEGIN_NAMESPACE
+    namespace Ui { class MainWindow; }
+//QT_END_NAMESPACE
 
 class MainWindow : public QMainWindow
 {
@@ -22,22 +23,16 @@ public:
     void setStepSpinnerStep(unsigned int steplength);
 
 private slots:
-
+    //UI slots:
     void on_option1_clicked(bool checked);
-
     void on_slideInterval_valueChanged(int value);
-
     void on_slideScale_valueChanged(int value);
-
     void on_spinCount_valueChanged(double arg1);
-
     void on_btnBackground_clicked();
-
     void on_btnLineColor_clicked();
-
     void on_lvShape_clicked(const QModelIndex &index);
 
-    void on_steps_changed(bool state=true);
+    void on_steps_changed();
 
 
 private:
