@@ -36,7 +36,7 @@ public:
     float scale() const { return mScale; }
 
     void setStepCount(qint64 count) {mStepCount = count; updatePixmap(); update(); }
-    int stepCount () const {return mStepCount; }
+    int stepCount() const {return mStepCount; }
 
     void setCool(bool Cool) { optionCool = Cool; updatePixmap(); update(); }
     bool Cool() const { return optionCool; }
@@ -77,7 +77,7 @@ protected:
 
 
 signals:
-    void stepsChanged();
+    void valueChanged();
 
 private:
     QList<ShapeType> shapestore;     //dynamische Qliste des structs, kann wie c array verwendet werden

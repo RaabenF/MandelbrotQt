@@ -13,6 +13,9 @@ MainWindow::MainWindow(QWidget *parent)
     //this->setAttribute(Qt::WA_TranslucentBackground);
     //this->move(-900,200);           //place window
     //this->ui->renderArea->setShape(0);
+    this->ui->lcdZoom->setSegmentStyle(QLCDNumber::Filled);
+    //todo set background color
+    //this->ui->lcdZoom->setBackgroundRole()
 
     // Populate our model of Shaplist for the scrollable Menulist
     modelShape->setStringList(ui->renderArea->ShapeList);    //string-list-model mShapeList
@@ -29,7 +32,7 @@ MainWindow::MainWindow(QWidget *parent)
         qDebug("mousetracking on");
     }else qDebug("mousetracking not available\n");
 
-    connect(ui->renderArea, SIGNAL(stepsChanged() ), this, SLOT(on_steps_changed()) );
+    connect(ui->renderArea, SIGNAL(valueChanged() ), this, SLOT(on_ui_val_changed()) );
     update_ui();
 }
 
@@ -47,6 +50,11 @@ void MainWindow::update_ui(){
     this->ui->spinCount->setValue(this->ui->renderArea->stepCount() );
 
     this->ui->lcdZoom->display(this->ui->renderArea->scale() );         //scale=zoom
+    if(this->ui->renderArea->stepCount() > this->ui->slideScale->maximum() ){
+        this->ui->lcdZoom->setSegmentStyle(QLCDNumber::Outline);
+    }else{
+        this->ui->lcdZoom->setSegmentStyle(QLCDNumber::Filled);
+    }
     this->ui->slideScale->setValue(this->ui->renderArea->scale() );
 
     this->ui->lcdInterval->display(this->ui->renderArea->Interval() );
@@ -104,7 +112,12 @@ void MainWindow::on_lvShape_clicked(const QModelIndex &index)   //listview click
     update_ui();
 }
 
-void MainWindow::on_steps_changed(){
+void MainWindow::on_ui_val_changed(){
     update_ui();
 };
+
+//https://doc.qt.io/qt-6/qlcdnumber.html#segmentStyle-prop
+//QLCDNumber::Outline	0	gives raised segments filled with the background color.
+//QLCDNumber::Filled	1	gives raised segments filled with the windowText color.
+//QLCDNumber::Flat	2	gives flat segments filled with the windowText color.
 

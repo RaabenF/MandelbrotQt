@@ -32,7 +32,7 @@ private slots:
     void on_btnLineColor_clicked();
     void on_lvShape_clicked(const QModelIndex &index);
 
-    void on_steps_changed();
+    void on_ui_val_changed();
 
 
 private:

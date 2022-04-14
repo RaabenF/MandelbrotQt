@@ -141,8 +141,8 @@ void RenderArea::wheelEvent(QWheelEvent *event){
         }
         //plotDrawer(this->mappainter);
     }
+    emit this->valueChanged();  //mainwindow updates ui then
     update();
-    emit this->stepsChanged();
 
     event->accept();
 }
@@ -196,6 +196,7 @@ unsigned int RenderArea::setShape (unsigned int row){
         //todo: threads
 
     } else mDrawLine = true;
+    //emit this->valueChanged();    //not needed till now
     repaint();
     return 0;   //return success
 }
@@ -323,25 +324,23 @@ QPointF RenderArea::compute_tilde(float x){
 
 //return QPointF( t + sin(*pFloatIter1), t + cos(*pFloatIter1) );
 
-QPointF RenderArea::compute_mandelb(float x,  float y){  //, std::complex<double> *lastXval){
-    //*lastXval = std::complex<double>(x, y);     //equals the Complex Number real=t * 1imag        #include <complex>
-    std::complex<double> Xvar(0,0);
+QPointF RenderArea::compute_mandelb(float x,  float y){
+    std::complex<double> Xvar(0,0);      //equals the Complex Number real=t * 1imag        #include <complex>
     std::complex<double> Cvar(x,y);      //float looks nice, too
 
     // X(i) = (X0)² + C
     for(int i=0; i<mStepCount; i++){
-        Xvar = Xvar * Xvar;     //Xval = std::pow(Xval,2);
-        Xvar += Cvar;           //X+C
-        //if(Xvar.real() > 0xFFFFFF){
+        Xvar = Xvar * Xvar;     // Xval² = std::pow(Xval,2);
+        Xvar += Cvar;           // X+C
+
         if(std::isinf( Xvar.real()) ){          //break at infinity
             QPointF endv( 0, i  );    //return Complex Value in fpoint
-            //QPointF endv( 0, i  );    //return Complex Value in fpoint
             return endv;
         }
     }
-    //std::abs(Xvar) std::arg(Xvar)     arg=angular=phase angle
+
+    //std::abs(Xvar) std::arg(Xvar)     arg=angular=phase angle, abs=total length of C
     QPointF endv( std::abs(Xvar), mStepCount);    //return Complex Value, and Iterations, in fpoint
-    //QPointF endv( Xvar.imag(), mStepCount);     //return Complex Value, and Iterations, in fpoint
     return endv;
 }
 
@@ -446,12 +445,11 @@ void RenderArea::plotDrawer(QPainter *painter, int tWidth, int tHeight){
     float tIntervLength = mIntervalLength;
     float tScale = mPreScale * mScale/100;      //preSc is set per Shape, mScale-slider:0..100..1000  => 0..1..10 *mPreScale mandel=1..100
 
-    int tXoffset = shapestore[this->mShapeIndex].Xoffset;// + mMove.x();   //lifetime of move is set with setShape(), that works well
+    int tXoffset = shapestore[this->mShapeIndex].Xoffset;// + mMove.x();   //lifetime of mouse-move is reset with setShape(), that works well
     int tYoffset = shapestore[this->mShapeIndex].Yoffset;
-    //QPoint tArea = QPoint(this->width(), this->height() );
 
     const float yInterval = tIntervLength * tHeight/tWidth;
-    const QPointF step = QPointF(tIntervLength/tWidth / tScale,        // *step scales a pix value to Interval-Units
+    const QPointF step = QPointF(tIntervLength/tWidth / tScale,  // *step scales a pix value to Interval-Units
                                  yInterval/tHeight / tScale);    //bigger scale -> smaller steps
 
     const float tInitScale = mPreScale * 100/100;      //preSc is set per Shape, mScale-slider:0..100..1000  => 0..1..10 *mPreScale mandel=1..100
