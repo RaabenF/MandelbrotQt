@@ -81,7 +81,7 @@ signals:
 
 private:
     QList<ShapeType> shapestore;     //dynamische Qliste des structs, kann wie c array verwendet werden
-    QPixmap *shapemap;
+    QPixmap *areaBuffer;
     QPainter *mappainter;
 
     QColor mBackgroundColor;
@@ -118,7 +118,7 @@ private:
     QPoint compute_mandelb(int x,  int y);
 
     void lineDrawer(float step, float tIntervLength, float scale, QPointF center, QPainter &painter);
-    void plotDrawer(QPainter *painter);
+    void plotDrawer(QPainter *painter, int tWidth, int tHeight);
 };
 
 #endif // RENDERAREA_H

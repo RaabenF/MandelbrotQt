@@ -3,7 +3,7 @@
 #include <QPainter>
 #include "mainwindow.h"
 
-class HelloWorldTask : public QRunnable
+class calcTask : public QRunnable
 {
     void run() override
     {
@@ -45,13 +45,25 @@ RenderArea::RenderArea(QWidget *parent) :
     shapestore.append(paramShape(10,"tst",30,M_PI,256) );
     //shapestore.append(paramShape(,"",10,M_PI,256) );      //copy me
 
-    HelloWorldTask *hello = new HelloWorldTask();
+    calcTask *hello = new calcTask();
     // QThreadPool takes ownership and deletes 'hello' automatically
     QThreadPool::globalInstance()->start(hello);
+
+    QThreadPool threadpl = QThreadPool(this);
+    threadpl.setExpiryTimeout(-1);  //negative=dont destroy new threads
+
+    int idealth = QThread::idealThreadCount();
+    if(idealth < 2){    // 1==unknown
+        threadpl.setMaxThreadCount(4);    //try 4 threads
+        qDebug()<< "Optimum Number of Threads could not be detected";
+    }
+    qDebug()<<"Optimum Threadnumber on your machine is: " << idealth;
+    //start threads as "class calcTask : public QRunnable" when needed, -> in setShape()
+
 }
 RenderArea::~RenderArea(){
     delete mappainter;  //delete in this order
-    delete shapemap;
+    delete areaBuffer;
 }
 
 QSize RenderArea::minimumSizeHint() const { //recommended minimum size for the widget
@@ -66,10 +78,10 @@ void RenderArea::resizeEvent(QResizeEvent *event){
     //called before paintEvent  |   event->oldSize();
     if(!mDrawLine){
         delete mappainter;  //delete in this order
-        delete shapemap;
-        shapemap = new QPixmap(event->size() );
-        mappainter = new QPainter(shapemap);
-        plotDrawer(this->mappainter);
+        delete areaBuffer;
+        areaBuffer = new QPixmap(event->size() );
+        mappainter = new QPainter(areaBuffer);
+        updatePixmap();
     }
 
     event->accept();
@@ -88,7 +100,7 @@ void RenderArea::mouseMoveEvent(QMouseEvent *event){
         mtMouseMove -= event->pos() - mMousePos;
         if (mtMouseMove.manhattanLength() > 3){   //movement treshold
             if(!mDrawLine){
-                plotDrawer(this->mappainter);
+                updatePixmap();
                 update();
             }
         }
@@ -176,8 +188,8 @@ unsigned int RenderArea::setShape (unsigned int row){
     if(mShapeIndex >= getShapeIDbyName("mandel brot") ){
         mDrawLine = false;
 
-        shapemap = new QPixmap(this->size() );    //inherits paintdevice
-        mappainter = new QPainter(shapemap);
+        areaBuffer = new QPixmap(this->size() );    //inherits paintdevice
+        mappainter = new QPainter(areaBuffer);
     } else mDrawLine = true;
     repaint();
     return 0;   //return success
@@ -194,7 +206,9 @@ unsigned int RenderArea::getShapeIDbyName(QString name){
 
 void RenderArea::updatePixmap(){
     if(mShapeIndex >= getShapeIDbyName("mandel brot") ){
-        plotDrawer(this->mappainter);       //repaint
+        plotDrawer(this->mappainter,       //repaint
+                   this->width(),
+                   this->height() );
     }
 }
 
@@ -389,7 +403,7 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
         painter.setRenderHint(QPainter::LosslessImageRendering, false);
 
         painter.setPen(Qt::black);
-        painter.drawPixmap(this->rect(), *shapemap, shapemap->rect() ); //target Area, pixmap source, source Area
+        painter.drawPixmap(this->rect(), *areaBuffer, areaBuffer->rect() ); //target Area, pixmap source, source Area
     }
 
     //durchläufe for() interval(256*2)+0+anfang+ende; 515
@@ -416,16 +430,13 @@ void RenderArea::lineDrawer(float step, float tIntervLength, float tScale, QPoin
     }//X-loop
 }
 
-void RenderArea::plotDrawer(QPainter *painter){
+void RenderArea::plotDrawer(QPainter *painter, int tWidth, int tHeight){
 
     float tIntervLength = mIntervalLength;
     float tScale = mPreScale * mScale/100;      //preSc is set per Shape, mScale-slider:0..100..1000  => 0..1..10 *mPreScale mandel=1..100
 
     int tXoffset = shapestore[this->mShapeIndex].Xoffset;// + mMove.x();   //lifetime of move is set with setShape(), that works well
     int tYoffset = shapestore[this->mShapeIndex].Yoffset;
-
-    int tWidth = this->width();
-    int tHeight = this->height();
     //QPoint tArea = QPoint(this->width(), this->height() );
 
     const float yInterval = tIntervLength * tHeight/tWidth;
