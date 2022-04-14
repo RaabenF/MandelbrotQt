@@ -26,10 +26,10 @@ MainWindow::MainWindow(QWidget *parent)
     if(this->hasMouseTracking() ){
         this->setMouseTracking(true);
         qDebug("mousetracking on");
-    }else qDebug("\nmousetracking not available\n");
+    }else qDebug("mousetracking not available\n");
 
-    connect(ui->renderArea, SIGNAL(ui->renderArea->stepChanged() ) ,
-            this, SLOT(this->on_steps_changed()) );
+    connect(ui->renderArea, SIGNAL(stepChanged() ),
+            this, SLOT(on_steps_changed()) );
     update_ui();
 }
 
