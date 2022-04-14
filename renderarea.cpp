@@ -45,6 +45,9 @@ RenderArea::RenderArea(QWidget *parent) :
     shapestore.append(paramShape(10,"tst",30,M_PI,256) );
     //shapestore.append(paramShape(,"",10,M_PI,256) );      //copy me
 
+    areaBuffer = new QPixmap(this->size() );    //inherits paintdevice
+    mappainter = new QPainter(areaBuffer);
+
     calcTask *hello = new calcTask();
     // QThreadPool takes ownership and deletes 'hello' automatically
     QThreadPool::globalInstance()->start(hello);
@@ -58,6 +61,7 @@ RenderArea::RenderArea(QWidget *parent) :
         qDebug()<< "Optimum Number of Threads could not be detected";
     }
     qDebug()<<"Optimum Threadnumber on your machine is: " << idealth;
+    qDebug()<<"initialization of Render Area done";
     //start threads as "class calcTask : public QRunnable" when needed, -> in setShape()
 
 }
@@ -188,8 +192,9 @@ unsigned int RenderArea::setShape (unsigned int row){
     if(mShapeIndex >= getShapeIDbyName("mandel brot") ){
         mDrawLine = false;
 
-        areaBuffer = new QPixmap(this->size() );    //inherits paintdevice
-        mappainter = new QPainter(areaBuffer);
+
+        //todo: threads
+
     } else mDrawLine = true;
     repaint();
     return 0;   //return success
