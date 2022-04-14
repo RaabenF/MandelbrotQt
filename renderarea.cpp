@@ -209,14 +209,6 @@ unsigned int RenderArea::getShapeIDbyName(QString name){
     return 0;   //else return standartvalue
 }
 
-void RenderArea::updatePixmap(){
-    if(mShapeIndex >= getShapeIDbyName("mandel brot") ){
-        plotDrawer(this->mappainter,       //repaint
-                   this->width(),
-                   this->height() );
-    }
-}
-
 
 QPointF RenderArea::compute(float x){
     switch(mShapeIndex){
@@ -329,6 +321,8 @@ QPointF RenderArea::compute_tilde(float x){
     return QPointF( x + sin(x), 0.5*x + cos(100*x) );
 }
 
+//return QPointF( t + sin(*pFloatIter1), t + cos(*pFloatIter1) );
+
 QPointF RenderArea::compute_mandelb(float x,  float y){  //, std::complex<double> *lastXval){
     //*lastXval = std::complex<double>(x, y);     //equals the Complex Number real=t * 1imag        #include <complex>
     std::complex<double> Xvar(0,0);
@@ -363,7 +357,7 @@ QPoint RenderArea::compute_mandelb(int x,  int y){  //only float double and long
         Xvar = Xvar * Xvar;     //Xval = std::pow(Xval,2);
         Xvar += Cvar;           //X+C
         if(std::isinf( Xvar.imag()) ){          //break at infinity
-            QPoint endv( Xvar.imag()*1000, i  );    //return Complex Value
+            QPoint endv( Xvar.imag()*1000, i  );    //return Complex Value - in int
             return endv;
         }
     }
@@ -371,7 +365,6 @@ QPoint RenderArea::compute_mandelb(int x,  int y){  //only float double and long
     return endv;
 }
 
-//return QPointF( t + sin(*pFloatIter1), t + cos(*pFloatIter1) );
 
 
 void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wenn nötig, protected+override im .h
@@ -435,6 +428,19 @@ void RenderArea::lineDrawer(float step, float tIntervLength, float tScale, QPoin
     }//X-loop
 }
 
+void RenderArea::updatePixmap(){
+    //is called on resize, mouse events, or value changes:
+
+    if(mShapeIndex >= getShapeIDbyName("mandel brot") ){
+        //only call to:
+        plotDrawer(this->mappainter,       //repaint main pixmap
+                   this->width(),
+                   this->height() );
+        //todo: dispatch partial pixmaps in here:
+
+    }
+}
+
 void RenderArea::plotDrawer(QPainter *painter, int tWidth, int tHeight){
 
     float tIntervLength = mIntervalLength;
@@ -455,23 +461,27 @@ void RenderArea::plotDrawer(QPainter *painter, int tWidth, int tHeight){
 
 
     // 2. this 2nd offset is added to the point-of-view, the step component represents the actual scale which is added in permanently
-    //
     mXoffset += (mtMouseMove.x() * step.x() );
     mYoffset += (mtMouseMove.y() * step.y() );
     mtMouseMove = QPoint(0,0);
 
+    yStartOffset += mYoffset;
     float x = xStartOffset + mXoffset;
+
     // 3. add the remaining half of the area-in-sight to the offsets, that equates to the final starting point
     x = x - tIntervLength/2 /tScale;
 
+    //two for-loops count every pixel: w=>x, h=>y, simultanious x & y count up for every pixel, in step-length of the interval (of the drawing function => compute() )
     for(int w= 0; w < tWidth; w++){
         //y = -1.5;   //debug
-        float y = yStartOffset + mYoffset;
+        //y is reset in every row:
+        float y = yStartOffset;
         y = y - yInterval/2 /tScale;
 
         for(int h= 0; h < tHeight; h++){
 
             if(true){//set float calculation (not int calc = false)
+
                 QPointF result = compute(x, y);
 
                 //iterations of the fractal scaled to color#   //modulo is useless, overflow does the same mostly.
@@ -500,8 +510,10 @@ void RenderArea::plotDrawer(QPainter *painter, int tWidth, int tHeight){
                 QColor colorart( Rcompl, steps, 255-steps, 255);    //0xRRGGBBAA
                 painter->setPen(colorart);
             }
+            //always:
             QPointF fpoint(w, h);       //area starts at (0,0)
             painter->drawPoint(fpoint);
+
             y += step.y();
         }//X-loop
         x += step.x();
