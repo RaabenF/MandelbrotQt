@@ -42,7 +42,7 @@ private slots:
 
 private:
     //Ui::MainWindow *ui;   //ist gleich:
-    Ui_MainWindow ui;
+    Ui_MainWindow *ui;
     QStringListModel *modelShape;
     float lastInterval;
 
