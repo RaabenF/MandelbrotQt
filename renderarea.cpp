@@ -37,10 +37,6 @@ RenderArea::RenderArea(QWidget *parent) :
     shapestore.append(paramShape(10,"tst",30,M_PI,256) );
     //shapestore.append(paramShape(,"",10,M_PI,256) );      //copy me
 
-    if(this->hasMouseTracking() ){
-        this->setMouseTracking(true);
-        qDebug("mousetracking on");
-    }else qDebug("\nmousetracking not available\n");
 }
 RenderArea::~RenderArea(){
     delete mappainter;  //delete in this order
@@ -119,6 +115,7 @@ void RenderArea::wheelEvent(QWheelEvent *event){
         //plotDrawer(this->mappainter);
     }
     update();
+    emit stepChanged();
     event->accept();
 }
 
@@ -180,7 +177,7 @@ unsigned int RenderArea::getShapeIDbyName(QString name){
             return shapestore[i].id;
         }
     }
-    return 0;   //0 is failure or standartvalue
+    return 0;   //else return standartvalue
 }
 
 void RenderArea::updatePixmap(){
@@ -449,40 +446,24 @@ void RenderArea::plotDrawer(QPainter *painter){
         for(int h= 0; h < tHeight; h++){
 
             if(true){//set float calculation (false = int calc)
-
                 QPointF result = compute(x, y);
-                float Rcompl = result.x();   //abs-length of Complex Number
-                //iterations scaled to color#
-                //float iter = result.y()/mStepCount*255;    //iterations of the fractal?
-                float i = result.y() / ((float)mStepCount) * 0xffffff;
-                unsigned int iter = i;
-                char r = iter>>16 & 0xff, g = iter>>8 & 0xff ,b = iter & 0xff;
 
+                //iterations of the fractal scaled to color#   //modulo is useless, overflow does the same mostly.
+                // use two complement colors is best. more iterations then advance contrast and detail
+                float iter = result.y() / ((float)mStepCount) * 0x2ff;    //standart: *255 or 0xff
+                //float i = result.y() / ((float)mStepCount) * 0xffffff;    //option psycho
+                unsigned int uiter = iter;
+                char r = 0, g = uiter>>1 & 0xff ,b = uiter & 0xff;
+                //char r = uiter>>16 & 0xff, g = uiter>>8 & 0xff ,b = uiter & 0xff;    //option psycho
 
-                //qDebug()<<Rcompl;
-                //modulo is not good. use two complement colors. more iterations then advance contrast and detail
-                int Rint = Rcompl*200;       //*100...500 for abs, absolute length is always positive
-                //Ruint <<= 2;
-                //Ruint = 255 - Ruint;
-
-                //we need the upper 3 bytes:
-                //int64R = int64R >> ((sizeof(qreal)-3)*8 );        // -inf => 0x800000
-                //Ruint = Ruint >> ((sizeof(Ruint)-3)*8 );        // -inf => 0x800000
-                //btest = btest >> ((sizeof(qreal)-3)*8 );        // -inf => 0x800000
-                //char32_t ctest = atest & 0xFFFFFF;
-
-                //set some variables in here for coloration.
-                //basic is TO USE THE # OF STEPS till break
-                //the length(complex) causes some variation
-                //QRgb color = qRgb( 0, iter, 128-iter);    //255,R,G,B
+                if(true){   //option crisp
+                    float fRC = result.x();  //the abs-length of Complex causes some bright pixels
+                    int iRC = fRC*100;       //*100...500 for abs, absolute length is always positive
+                    r = iRC;
+                }
                 QRgb color = qRgb( r, g, b);    //255,R,G,B
+
                 painter->setPen(color);
-
-
-
-
-
-
 
             }else{
 
