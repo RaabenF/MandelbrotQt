@@ -4,7 +4,7 @@
 //#include "mainwindow.h"
 
 #include <QRunnable>
-#include <QThread>
+//#include <QThread>
 #include <QThreadPool>
 
 class calcTask : public QRunnable
@@ -64,6 +64,7 @@ RenderArea::RenderArea(QWidget *parent) :
         qDebug()<< "Optimum Number of Threads could not be detected";
     }
     qDebug()<<"Optimum Threadnumber on your machine is: " << idealth;
+
     qDebug()<<"initialization of Render Area done";
     //start threads as "class calcTask : public QRunnable" when needed, -> in setShape()
 
@@ -454,19 +455,19 @@ void RenderArea::updatePixmap(){
 
 void RenderArea::plotDrawer(QPainter *painter, int tWidth, int tHeight){
 
-    float tIntervLength = mIntervalLength;
+    float xInterval = mIntervalLength;
     float tScale = mPreScale * mScale/100;      //preSc is set per Shape, mScale-slider:0..100..1000  => 0..1..10 *mPreScale mandel=1..100
 
     int tXoffset = shapestore[this->mShapeIndex].Xoffset;// + mMove.x();   //lifetime of mouse-move is reset with setShape(), that works well
     int tYoffset = shapestore[this->mShapeIndex].Yoffset;
 
-    const float yInterval = tIntervLength * tHeight/tWidth;
-    const QPointF step = QPointF(tIntervLength/tWidth / tScale,  // *step scales a pix value to Interval-Units
+    const float yInterval = xInterval * tHeight/tWidth;
+    const QPointF step = QPointF(xInterval/tWidth / tScale,  // *step scales a pix value to Interval-Units
                                  yInterval/tHeight / tScale);    //bigger scale -> smaller steps
 
     const float tInitScale = mPreScale * 100/100;      //preSc is set per Shape, mScale-slider:0..100..1000  => 0..1..10 *mPreScale mandel=1..100
     // 1. set the offset from shapestore for the point-of-view at beginning
-    float xStartOffset = tIntervLength/tWidth /tInitScale * tXoffset;   //viewport offset at init scale (1) =initStep*offset   -> 100px=-2/3  relative to 0,0
+    float xStartOffset = xInterval/tWidth /tInitScale * tXoffset;   //viewport offset at init scale (1) =initStep*offset   -> 100px=-2/3  relative to 0,0
     float yStartOffset = yInterval/tHeight /tInitScale * tYoffset;
 
 
@@ -476,20 +477,18 @@ void RenderArea::plotDrawer(QPainter *painter, int tWidth, int tHeight){
     mtMouseMove = QPoint(0,0);
 
     yStartOffset += mYoffset;
-    float x = xStartOffset + mXoffset;
+    xStartOffset += mXoffset;
 
     // 3. add the remaining half of the area-in-sight to the offsets, that equates to the final starting point
-    x = x - tIntervLength/2 /tScale;
+    float y = yStartOffset - yInterval/2 /tScale;
 
     //two for-loops count every pixel: w=>x, h=>y, simultanious x & y count up for every pixel, in step-length of the interval (of the drawing function => compute() )
-    for(int w= 0; w < tWidth; w++){
-        //y = -1.5;   //debug
-        //y is reset in every row:
-        float y = yStartOffset;
-        y = y - yInterval/2 /tScale;
 
-        for(int h= 0; h < tHeight; h++){
+    for(int h= 0; h < tHeight; h++){
+        //x is reset in every row:
+        float x = xStartOffset - xInterval/2 /tScale;
 
+        for(int w= 0; w < tWidth; w++){
             if(true){//set float calculation (not int calc = false)
 
                 QPointF result = compute(x, y);
@@ -524,11 +523,11 @@ void RenderArea::plotDrawer(QPainter *painter, int tWidth, int tHeight){
             QPointF fpoint(w, h);       //area starts at (0,0)
             painter->drawPoint(fpoint);
 
-            y += step.y();
+            x += step.x();
         }//X-loop
-        x += step.x();
-    }//Y-loop
 
+        y += step.y();
+    }//Y-loop
 }
 
 
