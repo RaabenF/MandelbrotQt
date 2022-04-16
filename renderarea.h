@@ -5,6 +5,12 @@
 #include <QPen>
 #include <complex>
 #include <QPixmap>
+//#include <QRunnable>
+
+//class calcTask : public QRunnable{
+//    Q_OBJECT
+//    void run() override;
+//};
 
 class RenderArea : public QWidget   //RenderArea ist ein Objekt in UI
 {

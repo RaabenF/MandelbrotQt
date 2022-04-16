@@ -1,12 +1,15 @@
 #include "renderarea.h"
 #include <QPaintEvent>
 #include <QPainter>
-#include "mainwindow.h"
+//#include "mainwindow.h"
+
+#include <QRunnable>
+#include <QThread>
+#include <QThreadPool>
 
 class calcTask : public QRunnable
 {
-    void run() override
-    {
+    void run() override{
         qDebug() << "Hello world from thread" << QThread::currentThread();
     }
 };
