@@ -120,13 +120,24 @@ void RenderArea::mouseReleaseEvent(QMouseEvent *event){
     mMouseLB = false;
 }
 
+void RenderArea::mouseDoubleClickEvent(QMouseEvent *event){
+    if (event->button() == Qt::LeftButton){
+        RenderArea::zoom(1);
+        event->accept();
+    }
+}
+
 void RenderArea::wheelEvent(QWheelEvent *event){
     //QPoint numPixels = event->pixelDelta();
     //    if (!numPixels.isNull()) {
     //        scrollWithPixels(numPixels);
     //    } else
-
     int steps = event->angleDelta().y() / 120;   //one mousewheel-scroll is 15 degree long
+    RenderArea::zoom(steps);
+    event->accept();
+}
+
+void RenderArea::zoom(int steps){
     //redraw with value stored whith last mouse event (scroll to cursor)
     QPoint pos = QCursor::pos() - this->window()->pos();
     const float zoomscale = 1.1;
@@ -146,8 +157,6 @@ void RenderArea::wheelEvent(QWheelEvent *event){
     }
     emit this->valueChanged();  //mainwindow updates ui then
     update();
-
-    event->accept();
 }
 
 RenderArea::ShapeType RenderArea::paramShape(unsigned int id, QString name, float preScale, float interval, int steps, float Xoffset, float Yoffset ){

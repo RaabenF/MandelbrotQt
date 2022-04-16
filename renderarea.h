@@ -75,9 +75,11 @@ protected:
     void mousePressEvent(QMouseEvent *event) override;
     void mouseMoveEvent(QMouseEvent *event) override;
     void mouseReleaseEvent(QMouseEvent *event) override;
+    void mouseDoubleClickEvent(QMouseEvent *event) override;
 #if QT_CONFIG(wheelevent)
     void wheelEvent(QWheelEvent *event) override;
 #endif
+    void zoom(int steps);
     QPoint mMousePos = QPoint(0,0), mtMouseMove;
     float mXoffset=0, mYoffset=0;               //valid till setShape()
 
