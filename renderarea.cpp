@@ -440,58 +440,68 @@ void RenderArea::lineDrawer(float step, float tIntervLength, float tScale, QPoin
     }//X-loop
 }
 
+//is called on resize, mouse events, or value changes:
 void RenderArea::updatePixmap(){
-    //is called on resize, mouse events, or value changes:
-
     if(mShapeIndex >= getShapeIDbyName("mandel brot") ){
+
+        int tWidth = this->width();
+        int tHeight = this->height();
+
+        const float xInterval = mIntervalLength;     //mIntervalLength;
+        const float yInterval = xInterval * tHeight/tWidth;
+        float tScale = mPreScale * mScale/100;      //preSc is set per Shape, mScale-slider:0..100..1000  => 0..1..10 *mPreScale mandel=1..100
+
+        int tXoffset = shapestore[this->mShapeIndex].Xoffset;// + mMove.x();   //lifetime of mouse-move is reset with setShape(), works well
+        int tYoffset = shapestore[this->mShapeIndex].Yoffset;
+
+        const QPointF step = QPointF(xInterval/tWidth / tScale,  // *step scales a pix value to Interval-Units
+                                     yInterval/tHeight / tScale);    //bigger scale -> smaller steps
+
+        const float tInitScale = mPreScale * 100/100;      //preSc is set per Shape, mScale-slider:0..100..1000  => 0..1..10 *mPreScale mandel=1..100
+        // 1. set the offset from shapestore for the point-of-view at beginning
+        float xStartOffset = xInterval/tWidth /tInitScale * tXoffset;   //viewport offset at init scale (1) =initStep*offset   -> 100px=-2/3  relative to 0,0
+        float yStartOffset = yInterval/tHeight /tInitScale * tYoffset;
+
+        // 2. this 2nd offset is added to the point-of-view, the step component represents the actual scale which is added in permanently
+        mXoffset += (mtMouseMove.x() * step.x() );
+        mYoffset += (mtMouseMove.y() * step.y() );
+        mtMouseMove = QPoint(0,0);  //move recieved
+
+        yStartOffset += mYoffset;
+        xStartOffset += mXoffset;
+        float xstart = xStartOffset - xInterval/2 /tScale;
+
+        // 3. add the remaining half of the area-in-sight to the offsets, that equates to the final starting point
+        float y = yStartOffset - yInterval/2 /tScale;
+
+
+
         //only call to:
-        plotDrawer(this->mappainter,       //repaint main pixmap
-                   this->width(),
-                   this->height() );
+        plotDrawer(this->mappainter,       //repaint main pixmap,
+                   xstart,
+                   y,
+                   step,
+                   tWidth,
+                   tHeight );
+
         //todo: dispatch partial pixmaps in here:
+
+
 
     }
 }
 
-void RenderArea::plotDrawer(QPainter *painter, int tWidth, int tHeight){
-
-    float xInterval = mIntervalLength;
-    float tScale = mPreScale * mScale/100;      //preSc is set per Shape, mScale-slider:0..100..1000  => 0..1..10 *mPreScale mandel=1..100
-
-    int tXoffset = shapestore[this->mShapeIndex].Xoffset;// + mMove.x();   //lifetime of mouse-move is reset with setShape(), that works well
-    int tYoffset = shapestore[this->mShapeIndex].Yoffset;
-
-    const float yInterval = xInterval * tHeight/tWidth;
-    const QPointF step = QPointF(xInterval/tWidth / tScale,  // *step scales a pix value to Interval-Units
-                                 yInterval/tHeight / tScale);    //bigger scale -> smaller steps
-
-    const float tInitScale = mPreScale * 100/100;      //preSc is set per Shape, mScale-slider:0..100..1000  => 0..1..10 *mPreScale mandel=1..100
-    // 1. set the offset from shapestore for the point-of-view at beginning
-    float xStartOffset = xInterval/tWidth /tInitScale * tXoffset;   //viewport offset at init scale (1) =initStep*offset   -> 100px=-2/3  relative to 0,0
-    float yStartOffset = yInterval/tHeight /tInitScale * tYoffset;
-
-
-    // 2. this 2nd offset is added to the point-of-view, the step component represents the actual scale which is added in permanently
-    mXoffset += (mtMouseMove.x() * step.x() );
-    mYoffset += (mtMouseMove.y() * step.y() );
-    mtMouseMove = QPoint(0,0);
-
-    yStartOffset += mYoffset;
-    xStartOffset += mXoffset;
-
-    // 3. add the remaining half of the area-in-sight to the offsets, that equates to the final starting point
-    float y = yStartOffset - yInterval/2 /tScale;
+void RenderArea::plotDrawer(QPainter *painter, float xstart, float ystart, QPointF step, int pixwidth, int pixheight){
 
     //two for-loops count every pixel: w=>x, h=>y, simultanious x & y count up for every pixel, in step-length of the interval (of the drawing function => compute() )
-
-    for(int h= 0; h < tHeight; h++){
+    for(int h= 0; h < pixheight; h++){
         //x is reset in every row:
-        float x = xStartOffset - xInterval/2 /tScale;
+        float xrun = xstart;
 
-        for(int w= 0; w < tWidth; w++){
+        for(int w= 0; w < pixwidth; w++){
             if(true){//set float calculation (not int calc = false)
 
-                QPointF result = compute(x, y);
+                QPointF result = compute(xrun, ystart);
 
                 //iterations of the fractal scaled to color#   //modulo is useless, overflow does the same mostly.
                 // use two complement colors is best. more iterations then advance contrast and detail
@@ -512,7 +522,7 @@ void RenderArea::plotDrawer(QPainter *painter, int tWidth, int tHeight){
 
             }else{
                 //int calculation is useless on mandel so far:
-                QPointF result = compute((int)(x*1000), (int)(y*1000) );
+                QPointF result = compute((int)(xrun*1000), (int)(ystart*1000) );
                 char Rcompl = result.x();   //length of Complex Number
                 char steps = result.y();    //iterations of the fractal?
 
@@ -523,10 +533,10 @@ void RenderArea::plotDrawer(QPainter *painter, int tWidth, int tHeight){
             QPointF fpoint(w, h);       //area starts at (0,0)
             painter->drawPoint(fpoint);
 
-            x += step.x();
+            xrun += step.x();
         }//X-loop
 
-        y += step.y();
+        ystart += step.y();
     }//Y-loop
 }
 

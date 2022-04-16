@@ -126,7 +126,7 @@ private:
     QPoint compute_mandelb(int x,  int y);
 
     void lineDrawer(float step, float tIntervLength, float scale, QPointF center, QPainter &painter);
-    void plotDrawer(QPainter *painter, int tWidth, int tHeight);
+    void plotDrawer(QPainter *painter, float xstart, float xstop, QPointF step, int pixwidth, int pixheight);
 };
 
 #endif // RENDERAREA_H
