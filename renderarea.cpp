@@ -19,7 +19,7 @@ RenderArea::RenderArea(QWidget *parent) :
       //init list:
     ,mBackgroundColor(Qt::darkBlue)
     ,mShapeColor(255, 255, 255)
-    , mPreScale(1), mIntervalLength(1), mStepCount(8), optionCool(false)
+    ,mPreScale(1), mIntervalLength(1), mStepCount(8), optionCool(false)
 {
 //test, geht nicht wg kein append()
 //    shapetest[0]={     //Qlist(dynamic array) - vom struct
@@ -50,6 +50,8 @@ RenderArea::RenderArea(QWidget *parent) :
 
     areaBuffer = new QPixmap(this->size() );    //inherits paintdevice
     mappainter = new QPainter(areaBuffer);
+    //infinitymap = new QBitmap(areaBuffer->size() );
+    //infpainter = new QPainter(infinitymap);
 
     calcTask *hello = new calcTask();
     // QThreadPool takes ownership and deletes 'hello' automatically
@@ -202,13 +204,17 @@ unsigned int RenderArea::setShape (unsigned int row){
         qDebug() << "shapelist index out of range, no menu";
         return shapestore.length();                             //return failure
     }
+    //init plotter specific stuff
     if(mShapeIndex >= getShapeIDbyName("mandel brot") ){
+        infm.reserve(this->height()*this->width() );
         mDrawLine = false;
-
 
         //todo: threads
 
-    } else mDrawLine = true;
+    } else{
+        infm.clear();
+        mDrawLine = true;
+    }
     //emit this->valueChanged();    //not needed till now
     repaint();
     return 0;   //return success
@@ -347,11 +353,10 @@ QPointF RenderArea::compute_mandelb(float x,  float y){
         Xvar += Cvar;           // X+C
 
         if(std::isinf( Xvar.real()) ){          //break at infinity
-            QPointF endv( 0, i  );    //return Complex Value in fpoint
+            QPointF endv( 0, i  );    //return number of iterations
             return endv;
         }
     }
-
     //std::abs(Xvar) std::arg(Xvar)     arg=angular=phase angle, abs=total length of C
     QPointF endv( std::abs(Xvar), mStepCount);    //return Complex Value, and Iterations, in fpoint
     return endv;
@@ -361,8 +366,8 @@ QPointF RenderArea::compute_mandelb(float x,  float y){
 QPoint RenderArea::compute_mandelb(int x,  int y){  //only float double and longdouble are guaranteed in std::complex
     float a=x, b=y;
     a /=100; b/=100;
-    std::complex<float> Xvar(0,0);
-    std::complex<float> Cvar(a,b);
+    std::complex<double> Xvar(0,0);
+    std::complex<double> Cvar(a,b);
 
     // X(i) = (X0)² + C
     for(int i=0; i<mStepCount; i++){
@@ -373,7 +378,7 @@ QPoint RenderArea::compute_mandelb(int x,  int y){  //only float double and long
             return endv;
         }
     }
-    QPoint endv( Xvar.imag(), mStepCount  );    //return Complex Value in fpoint
+    QPoint endv( 0, mStepCount  );    //return Complex Value in fpoint
     return endv;
 }
 
@@ -446,6 +451,7 @@ void RenderArea::updatePixmap(){
 
         int tWidth = this->width();
         int tHeight = this->height();
+        infm.resize(tWidth*tHeight);
 
         const float xInterval = mIntervalLength;     //mIntervalLength;
         const float yInterval = xInterval * tHeight/tWidth;
@@ -469,17 +475,13 @@ void RenderArea::updatePixmap(){
 
         yStartOffset += mYoffset;
         xStartOffset += mXoffset;
-        float xstart = xStartOffset - xInterval/2 /tScale;
 
         // 3. add the remaining half of the area-in-sight to the offsets, that equates to the final starting point
-        float y = yStartOffset - yInterval/2 /tScale;
-
-
-
+        QPointF start = QPointF(xStartOffset - xInterval/2 /tScale,
+                                yStartOffset - yInterval/2 /tScale);
         //only call to:
         plotDrawer(this->mappainter,       //repaint main pixmap,
-                   xstart,
-                   y,
+                   start,
                    step,
                    tWidth,
                    tHeight );
@@ -491,17 +493,20 @@ void RenderArea::updatePixmap(){
     }
 }
 
-void RenderArea::plotDrawer(QPainter *painter, float xstart, float ystart, QPointF step, int pixwidth, int pixheight){
+void RenderArea::plotDrawer(QPainter *painter, QPointF startpnt, QPointF step, int pixwidth, int pixheight){
+    float ystart = startpnt.y();
+    int pixcounter=0;
 
     //two for-loops count every pixel: w=>x, h=>y, simultanious x & y count up for every pixel, in step-length of the interval (of the drawing function => compute() )
     for(int h= 0; h < pixheight; h++){
         //x is reset in every row:
-        float xrun = xstart;
+        float xrun = startpnt.x();
 
         for(int w= 0; w < pixwidth; w++){
+            QPointF result = QPointF(0,0);
             if(true){//set float calculation (not int calc = false)
-
-                QPointF result = compute(xrun, ystart);
+                if(!infm.at(pixcounter) )
+                    result = compute(xrun, ystart);
 
                 //iterations of the fractal scaled to color#   //modulo is useless, overflow does the same mostly.
                 // use two complement colors is best. more iterations then advance contrast and detail
@@ -511,29 +516,38 @@ void RenderArea::plotDrawer(QPainter *painter, float xstart, float ystart, QPoin
                 char r = 0, g = uiter>>1 & 0xff ,b = uiter & 0xff;
                 //char r = uiter>>16 & 0xff, g = uiter>>8 & 0xff ,b = uiter & 0xff;    //option psycho
 
-                if(true){   //option crisp
+                if(false){   //option crisp
                     float fRC = result.x();  //the abs-length of Complex causes some bright pixels
                     int iRC = fRC*100;       //*100...500 for abs, absolute length is always positive
                     r = iRC;
                 }
                 QRgb color = qRgb( r, g, b);    //255,R,G,B
-
                 painter->setPen(color);
 
+                //when inf is not reached paint initially black=0
+                if(result.x() != 0){
+                    //painter->setPen(color);
+                    infm.at(pixcounter) = 1;
+                }else{
+                    //painter->setPen(Qt::black);
+                    infm.at(pixcounter) = 0;
+                }
             }else{
                 //int calculation is useless on mandel so far:
                 QPointF result = compute((int)(xrun*1000), (int)(ystart*1000) );
                 char Rcompl = result.x();   //length of Complex Number
                 char steps = result.y();    //iterations of the fractal?
 
-                QColor colorart( Rcompl, steps, 255-steps, 255);    //0xRRGGBBAA
+                QColor colorart( Rcompl, steps, 255-steps);    //0xRRGGBBAA
                 painter->setPen(colorart);
             }
             //always:
             QPointF fpoint(w, h);       //area starts at (0,0)
             painter->drawPoint(fpoint);
+            //infpainter->drawPoint(fpoint);
 
             xrun += step.x();
+            pixcounter++;
         }//X-loop
 
         ystart += step.y();

@@ -24,7 +24,6 @@ MainWindow::MainWindow(QWidget *parent)
     //debugging stuff:
     QScreen *screen = QGuiApplication::screens()[0];    //doesnt matter wich screen, with virtual desktop
     this->move(screen->availableGeometry().width() - this->width(), screen->availableGeometry().height() -this->height() );
-    this->ui->renderArea->setShape(this->ui->renderArea->getShapeIDbyName("mandel brot") );
     //QScreen *screen = QGuiApplication::screens()[QGuiApplication::screens().size()-1];
     //this->setScreen(screen );     //see doc, doesnt move automatic, not on virtual screens
     if(this->hasMouseTracking() ){
@@ -34,6 +33,7 @@ MainWindow::MainWindow(QWidget *parent)
 
     connect(ui->renderArea, SIGNAL(valueChanged() ), this, SLOT(on_ui_val_changed()) );
     update_ui();
+    this->ui->renderArea->setShape(this->ui->renderArea->getShapeIDbyName("mandel brot") );
 }
 
 MainWindow::~MainWindow()

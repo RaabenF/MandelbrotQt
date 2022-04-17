@@ -91,6 +91,7 @@ private:
     QList<ShapeType> shapestore;     //dynamische Qliste des structs, kann wie c array verwendet werden
     QPixmap *areaBuffer;
     QPainter *mappainter;
+    std::vector<bool> infm;
 
     QColor mBackgroundColor;
     QColor mShapeColor;
@@ -126,7 +127,7 @@ private:
     QPoint compute_mandelb(int x,  int y);
 
     void lineDrawer(float step, float tIntervLength, float scale, QPointF center, QPainter &painter);
-    void plotDrawer(QPainter *painter, float xstart, float xstop, QPointF step, int pixwidth, int pixheight);
+    void plotDrawer(QPainter *painter, QPointF startpnt, QPointF step, int pixwidth, int pixheight);
 };
 
 #endif // RENDERAREA_H
