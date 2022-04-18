@@ -93,7 +93,7 @@ void RenderArea::resizeEvent(QResizeEvent *event){
         paintarea = new QPixmap(event->size() );
         dsizebuffer = new QPixmap(paintarea->size()*2 );
         mappainter = new QPainter(dsizebuffer);
-        updatePixmap();
+        repaint();
     }
 
     event->accept();
@@ -112,7 +112,7 @@ void RenderArea::mouseMoveEvent(QMouseEvent *event){
         mtMouseMove -= event->pos() - mMousePos;
         if (mtMouseMove.manhattanLength() > 3){   //movement treshold
             if(!mDrawLine){
-                updatePixmap();
+                repaint();
                 update();
             }
         }
@@ -446,9 +446,17 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
 }
 
 //is called on resize, mouse events, or value changes:
-void RenderArea::updatePixmap(){
+void RenderArea::repaint(){
+    updatePixmap(dsizebuffer);
+
+    //todo: dispatch partial pixmaps in here:
+
+
+
+}
+void RenderArea::updatePixmap(QPixmap *targetmap){
     if(mShapeIndex >= getShapeIDbyName("mandel brot") ){
-        int tWidth = dsizebuffer->width(), tHeight = dsizebuffer->height();
+        int tWidth = targetmap->width(), tHeight = targetmap->height();
 //        int tWidth = this->width();
 //        int tHeight = this->height();
         infm.resize(tWidth*tHeight);
@@ -480,15 +488,10 @@ void RenderArea::updatePixmap(){
         QPointF start = QPointF(xStartOffset - xInterval/2 /tScale,
                                 yStartOffset - yInterval/2 /tScale);
         //only call to:
-        plotDrawer(this->mappainter,       //repaint main pixmap, to dsizebuffer
+        plotDrawer(this->mappainter,       //repaint main pixmap, to targetmap
                    start,
                    step,
-                   dsizebuffer->size() );
-
-        //todo: dispatch partial pixmaps in here:
-
-
-
+                   targetmap->size() );
     }
 }
 

@@ -22,10 +22,10 @@ public:
     QSize minimumSizeHint() const override; // Q_DECL_OVERRIDE; im Tutorial ist deprecated
     QSize sizeHint() const override;
 
-    void setBackgroundColor(QColor color) {mBackgroundColor = color; updatePixmap(); update(); }  //setter, inline weil kurz
+    void setBackgroundColor(QColor color) {mBackgroundColor = color; repaint(); update(); }  //setter, inline weil kurz
     QColor backgroundColor() const { return mBackgroundColor; }             //getter, const schützt die Member vor Änderungen
 
-    void setShapeColor(QColor color) {mPen.setColor(color); updatePixmap(); update(); }  //setter, inline weil kurz
+    void setShapeColor(QColor color) {mPen.setColor(color); repaint(); update(); }  //setter, inline weil kurz
     QColor ShapeColor() const { return mPen.color(); }             //getter, const schützt die Member vor Änderungen
 
     unsigned int getShapeIDbyName(QString name);
@@ -35,16 +35,16 @@ public:
 
     //unsigned int setShape (QString query);
 
-    void setInterval(float value) { mIntervalLength = value; updatePixmap(); update(); }
+    void setInterval(float value) { mIntervalLength = value; repaint(); update(); }
     float Interval() const { return mIntervalLength; }
 
-    void setScale(int scale) { mScale = scale; updatePixmap(); update(); }     //int->float is ok da nur ganze werte
+    void setScale(int scale) { mScale = scale; repaint(); update(); }     //int->float is ok da nur ganze werte
     float scale() const { return mScale; }
 
-    void setStepCount(qint64 count) {mStepCount = count; updatePixmap(); update(); }
+    void setStepCount(qint64 count) {mStepCount = count; repaint(); update(); }
     int stepCount() const {return mStepCount; }
 
-    void setCool(bool Cool) { optionCool = Cool; updatePixmap(); update(); }
+    void setCool(bool Cool) { optionCool = Cool; repaint(); update(); }
     bool Cool() const { return optionCool; }
 
     typedef struct id_name_scale_interval_steps{      //tag optional
@@ -125,7 +125,8 @@ private:
     QPoint compute_mandelb(int x,  int y);
 
     void lineDrawer(float step, float tIntervLength, float scale, QPointF center, QPainter &painter);
-    void updatePixmap();
+    void repaint();
+    void updatePixmap(QPixmap *targetmap);
     void plotDrawer(QPainter *painter, QPointF startpnt, QPointF step, QSize targetsize);
 };
 
