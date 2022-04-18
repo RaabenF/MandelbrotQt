@@ -461,7 +461,11 @@ void RenderArea::repaint(){
     else{
         //copy=deepcopy of part of pixmap
         int tWidth = dsizebuffer->width(), tHeight = dsizebuffer->height();
-        *paintarea = dsizebuffer->copy(tWidth/4, tHeight/4, tWidth, tHeight );
+        QRect trect = dsizebuffer->rect();
+        trect.setX(tWidth/4);
+        trect.setY(tHeight/4);
+        trect.setSize(paintarea->size() );
+        *paintarea = dsizebuffer->copy(trect );//tWidth/4, tHeight/4, tWidth, tHeight );  //copy causes wrong sizechange without rect()
         //*paintarea = dsizebuffer->scaled(,Qt::KeepAspectRatioByExpanding,Qt::SmoothTransformation);
         //updatePixmap(paintarea);
     }
