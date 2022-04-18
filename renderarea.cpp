@@ -156,9 +156,7 @@ void RenderArea::zoom(int steps){
             if(mScaleSteps)setStepCount(mStepCount / (zoomscale) );
             mtMouseMove += (this->rect().center() - pos)/2;
             setScale(mScale/2 );
-            //setScale calls updatePixmap()->plotDrawer()
         }
-        //plotDrawer(this->mappainter);
     }
     emit this->valueChanged();  //mainwindow updates ui then
     update();
@@ -438,7 +436,16 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
 
         painter.setPen(Qt::black);
         //draw paintarea buffer to screen:
-        painter.drawPixmap(this->rect(), *dsizebuffer, dsizebuffer->rect() ); //target Area, pixmap source, source Area
+        if(mScale==100){
+            painter.drawPixmap(this->rect(), *dsizebuffer, dsizebuffer->rect() ); //target Area, pixmap source, source Area
+            //if(! (this->rect()==dsizebuffer->rect()) )qDebug() << "wrong pixmap size";
+        }else{
+            //copy=deepcopy of part of pixmap
+            //*paintarea = dsizebuffer->scaled(,Qt::KeepAspectRatioByExpanding,Qt::SmoothTransformation);
+            //updatePixmap(paintarea);
+            painter.drawPixmap(this->rect(), *paintarea, paintarea->rect() );
+            if(! (this->rect()==paintarea->rect()) )qDebug() << "wrong pixmap size";
+        }
     }
 
     //durchläufe for() interval(256*2)+0+anfang+ende; 515
@@ -447,13 +454,19 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
 
 //is called on resize, mouse events, or value changes:
 void RenderArea::repaint(){
-    updatePixmap(dsizebuffer);
 
     //todo: dispatch partial pixmaps in here:
-
-
-
+    if(mScale==100)
+        updatePixmap(dsizebuffer);
+    else{
+        //copy=deepcopy of part of pixmap
+        int tWidth = dsizebuffer->width(), tHeight = dsizebuffer->height();
+        *paintarea = dsizebuffer->copy(tWidth/4, tHeight/4, tWidth, tHeight );
+        //*paintarea = dsizebuffer->scaled(,Qt::KeepAspectRatioByExpanding,Qt::SmoothTransformation);
+        //updatePixmap(paintarea);
+    }
 }
+
 void RenderArea::updatePixmap(QPixmap *targetmap){
     if(mShapeIndex >= getShapeIDbyName("mandel brot") ){
         int tWidth = targetmap->width(), tHeight = targetmap->height();
@@ -485,11 +498,13 @@ void RenderArea::updatePixmap(QPixmap *targetmap){
         xStartOffset += mXoffset;
 
         // 3. add the remaining half of the area-in-sight to the offsets, that equates to the final starting point
-        QPointF start = QPointF(xStartOffset - xInterval/2 /tScale,
+        QPointF startpoint = QPointF(xStartOffset - xInterval/2 /tScale,
                                 yStartOffset - yInterval/2 /tScale);
+        mappainter->end();
+        mappainter->begin(targetmap);
         //only call to:
         plotDrawer(this->mappainter,       //repaint main pixmap, to targetmap
-                   start,
+                   startpoint,
                    step,
                    targetmap->size() );
     }
