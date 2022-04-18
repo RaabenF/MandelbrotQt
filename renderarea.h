@@ -89,9 +89,9 @@ signals:
 
 private:
     QList<ShapeType> shapestore;     //dynamische Qliste des structs, kann wie c array verwendet werden
-    QPixmap *areaBuffer;
+    QPixmap *paintarea, *dsizebuffer;
     QPainter *mappainter;
-    std::vector<bool> infm;
+    std::vector<bool> infm;     //pixelmask infinitymap
 
     QColor mBackgroundColor;
     QColor mShapeColor;
@@ -105,8 +105,6 @@ private:
     bool optionCool, mDrawLine;
     bool mMouseLB=false;
     const bool mScaleSteps = true;
-
-    void updatePixmap();
 
     QPointF compute(float x);           //dispatcher based on type
     QPointF compute(float x,  float y);
@@ -127,7 +125,8 @@ private:
     QPoint compute_mandelb(int x,  int y);
 
     void lineDrawer(float step, float tIntervLength, float scale, QPointF center, QPainter &painter);
-    void plotDrawer(QPainter *painter, QPointF startpnt, QPointF step, int pixwidth, int pixheight);
+    void updatePixmap();
+    void plotDrawer(QPainter *painter, QPointF startpnt, QPointF step, QSize targetsize);
 };
 
 #endif // RENDERAREA_H

@@ -48,10 +48,9 @@ RenderArea::RenderArea(QWidget *parent) :
     shapestore.append(paramShape(10,"tst",30,M_PI,256) );
     //shapestore.append(paramShape(,"",10,M_PI,256) );      //copy me
 
-    areaBuffer = new QPixmap(this->size() );    //inherits paintdevice
-    mappainter = new QPainter(areaBuffer);
-    //infinitymap = new QBitmap(areaBuffer->size() );
-    //infpainter = new QPainter(infinitymap);
+    paintarea = new QPixmap(this->size() );    //inherits paintdevice
+    dsizebuffer = new QPixmap(paintarea->size()*2 );
+    mappainter = new QPainter(dsizebuffer);
 
     calcTask *hello = new calcTask();
     // QThreadPool takes ownership and deletes 'hello' automatically
@@ -73,7 +72,8 @@ RenderArea::RenderArea(QWidget *parent) :
 }
 RenderArea::~RenderArea(){
     delete mappainter;  //delete in this order
-    delete areaBuffer;
+    delete paintarea;
+    delete dsizebuffer;
 }
 
 QSize RenderArea::minimumSizeHint() const { //recommended minimum size for the widget
@@ -88,9 +88,11 @@ void RenderArea::resizeEvent(QResizeEvent *event){
     //called before paintEvent  |   event->oldSize();
     if(!mDrawLine){
         delete mappainter;  //delete in this order
-        delete areaBuffer;
-        areaBuffer = new QPixmap(event->size() );
-        mappainter = new QPainter(areaBuffer);
+        delete paintarea;
+        delete dsizebuffer;
+        paintarea = new QPixmap(event->size() );
+        dsizebuffer = new QPixmap(paintarea->size()*2 );
+        mappainter = new QPainter(dsizebuffer);
         updatePixmap();
     }
 
@@ -229,7 +231,6 @@ unsigned int RenderArea::getShapeIDbyName(QString name){
     return 0;   //else return standartvalue
 }
 
-
 QPointF RenderArea::compute(float x){
     switch(mShapeIndex){
     case 0:
@@ -343,6 +344,26 @@ QPointF RenderArea::compute_tilde(float x){
 
 //return QPointF( t + sin(*pFloatIter1), t + cos(*pFloatIter1) );
 
+void RenderArea::lineDrawer(float step, float tIntervLength, float tScale, QPointF center, QPainter &painter){
+    mPen.setWidth(2);
+    mPen.setColor(Qt::white);        // wegmachen hier aus paint??
+    painter.setPen(mPen);   //draw with the pen
+
+    QPointF fprevPixel = compute(-tIntervLength) * tScale + center;    //first point
+
+    for (float x= -tIntervLength; x < tIntervLength; x += step){    //drawing center focused is probably safest way
+        //draws a line between actual and previous point
+        QPointF fpoint = compute(x) * tScale + center;
+        //konvertiere Float2D zu Int(Pixel)2D, unnötig
+        //        QPoint pixel;
+        //        pixel.setX(fpoint.x() * tScale + center.x() );
+        //        pixel.setY(fpoint.y() * tScale + center.y() );
+        if(optionCool)painter.drawLine(fpoint, center);        //das war zuerst ein Fehler im Tut, als prevPixel gefehlt hat, grad übernommen
+        painter.drawLine(fpoint, fprevPixel);
+        fprevPixel = fpoint;
+    }//X-loop
+}
+
 QPointF RenderArea::compute_mandelb(float x,  float y){
     std::complex<double> Xvar(0,0);      //equals the Complex Number real=t * 1imag        #include <complex>
     std::complex<double> Cvar(x,y);      //float looks nice, too
@@ -382,8 +403,6 @@ QPoint RenderArea::compute_mandelb(int x,  int y){  //only float double and long
     return endv;
 }
 
-
-
 void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wenn nötig, protected+override im .h
 {
     Q_UNUSED(event);        //deaktiviert Kompilerwarnung
@@ -418,39 +437,20 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
         painter.setRenderHint(QPainter::LosslessImageRendering, false);
 
         painter.setPen(Qt::black);
-        painter.drawPixmap(this->rect(), *areaBuffer, areaBuffer->rect() ); //target Area, pixmap source, source Area
+        //draw paintarea buffer to screen:
+        painter.drawPixmap(this->rect(), *dsizebuffer, dsizebuffer->rect() ); //target Area, pixmap source, source Area
     }
 
     //durchläufe for() interval(256*2)+0+anfang+ende; 515
     //GESAMT DURCHLÄUFE 5, evtl wegen oversampling? -> ohne antialiasing 4
 }
 
-void RenderArea::lineDrawer(float step, float tIntervLength, float tScale, QPointF center, QPainter &painter){
-    mPen.setWidth(2);
-    mPen.setColor(Qt::white);        // wegmachen hier aus paint??
-    painter.setPen(mPen);   //draw with the pen
-
-    QPointF fprevPixel = compute(-tIntervLength) * tScale + center;    //first point
-
-    for (float x= -tIntervLength; x < tIntervLength; x += step){    //drawing center focused is probably safest way
-        //draws a line between actual and previous point
-        QPointF fpoint = compute(x) * tScale + center;
-        //konvertiere Float2D zu Int(Pixel)2D, unnötig
-        //        QPoint pixel;
-        //        pixel.setX(fpoint.x() * tScale + center.x() );
-        //        pixel.setY(fpoint.y() * tScale + center.y() );
-        if(optionCool)painter.drawLine(fpoint, center);        //das war zuerst ein Fehler im Tut, als prevPixel gefehlt hat, grad übernommen
-        painter.drawLine(fpoint, fprevPixel);
-        fprevPixel = fpoint;
-    }//X-loop
-}
-
 //is called on resize, mouse events, or value changes:
 void RenderArea::updatePixmap(){
     if(mShapeIndex >= getShapeIDbyName("mandel brot") ){
-
-        int tWidth = this->width();
-        int tHeight = this->height();
+        int tWidth = dsizebuffer->width(), tHeight = dsizebuffer->height();
+//        int tWidth = this->width();
+//        int tHeight = this->height();
         infm.resize(tWidth*tHeight);
 
         const float xInterval = mIntervalLength;     //mIntervalLength;
@@ -480,11 +480,10 @@ void RenderArea::updatePixmap(){
         QPointF start = QPointF(xStartOffset - xInterval/2 /tScale,
                                 yStartOffset - yInterval/2 /tScale);
         //only call to:
-        plotDrawer(this->mappainter,       //repaint main pixmap,
+        plotDrawer(this->mappainter,       //repaint main pixmap, to dsizebuffer
                    start,
                    step,
-                   tWidth,
-                   tHeight );
+                   dsizebuffer->size() );
 
         //todo: dispatch partial pixmaps in here:
 
@@ -493,7 +492,8 @@ void RenderArea::updatePixmap(){
     }
 }
 
-void RenderArea::plotDrawer(QPainter *painter, QPointF startpnt, QPointF step, int pixwidth, int pixheight){
+void RenderArea::plotDrawer(QPainter *painter, QPointF startpnt, QPointF step,  QSize targetsize){
+    int pixwidth = targetsize.width(), pixheight = targetsize.height();
     float ystart = startpnt.y();
     int pixcounter=0;
 
