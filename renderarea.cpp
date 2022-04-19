@@ -44,7 +44,7 @@ RenderArea::RenderArea(QWidget *parent) :
     shapestore.append(paramShape(6,"Star",20,3*M_PI,256) );
     shapestore.append(paramShape(7,"Cloud",10,14*M_PI,128) );
     shapestore.append(paramShape(8,"Tilde",55,M_PI,256,0,0) );
-    shapestore.append(paramShape(9,"Mandel Brot",1, 3, 64, -100) );   //interval empfohlen: -3..3    steps ist die Auflösung der Berechnung
+    shapestore.append(paramShape(9,"Mandel Brot",1, 3, 64, -200) );   //interval empfohlen: -3..3    steps ist die Auflösung der Berechnung
     shapestore.append(paramShape(10,"tst",30,M_PI,256) );
     //shapestore.append(paramShape(,"",10,M_PI,256) );      //copy me
 
