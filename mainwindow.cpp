@@ -32,8 +32,8 @@ MainWindow::MainWindow(QWidget *parent)
     }else qDebug("mousetracking not available\n");
 
     connect(ui->renderArea, SIGNAL(valueChanged() ), this, SLOT(on_ui_val_changed()) );
-    update_ui();
     this->ui->renderArea->setShape(this->ui->renderArea->getShapeIDbyName("mandel brot") );
+    update_ui();
 }
 
 MainWindow::~MainWindow()

@@ -93,7 +93,7 @@ void RenderArea::resizeEvent(QResizeEvent *event){
         paintarea = new QPixmap(event->size() );
         dsizebuffer = new QPixmap(paintarea->size()*2 );
         mappainter = new QPainter(dsizebuffer);
-        repaint();
+        updateOutput();
     }
 
     event->accept();
@@ -112,7 +112,7 @@ void RenderArea::mouseMoveEvent(QMouseEvent *event){
         mtMouseMove -= event->pos() - mMousePos;
         if (mtMouseMove.manhattanLength() > 3){   //movement treshold
             if(!mDrawLine){
-                repaint();
+                updateOutput();
                 update();
             }
         }
@@ -193,12 +193,15 @@ unsigned int RenderArea::setShape (unsigned int row){
         mPreScale = shapestore[mShapeIndex].prescale;
         mIntervalLength = shapestore[mShapeIndex].interval;
         mStepCount = shapestore[mShapeIndex].steps;
+        mXoffset = shapestore[mShapeIndex].Xoffset;
+        mYoffset = shapestore[mShapeIndex].Yoffset;
         mScale=100; //uncomment to keep zoom on change
         //optionCool=false;
         mDrawLine=false;
 
+        mXoffset = 0;
+        mYoffset = 0;
         mtMouseMove = QPoint(0,0);
-        mXoffset=0, mYoffset=0;
     }
     else{
         qDebug() << "shapelist index out of range, no menu";
@@ -216,7 +219,7 @@ unsigned int RenderArea::setShape (unsigned int row){
         mDrawLine = true;
     }
     //emit this->valueChanged();    //not needed till now
-    repaint();
+    updateOutput();
     return 0;   //return success
 }
 
@@ -381,7 +384,6 @@ QPointF RenderArea::compute_mandelb(float x,  float y){
     return endv;
 }
 
-
 QPoint RenderArea::compute_mandelb(int x,  int y){  //only float double and longdouble are guaranteed in std::complex
     float a=x, b=y;
     a /=100; b/=100;
@@ -400,6 +402,8 @@ QPoint RenderArea::compute_mandelb(int x,  int y){  //only float double and long
     QPoint endv( 0, mStepCount  );    //return Complex Value in fpoint
     return endv;
 }
+
+
 
 void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wenn nötig, protected+override im .h
 {
@@ -447,25 +451,27 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
             if(! (this->rect()==paintarea->rect()) )qDebug() << "wrong pixmap size";
         }
     }
-
     //durchläufe for() interval(256*2)+0+anfang+ende; 515
     //GESAMT DURCHLÄUFE 5, evtl wegen oversampling? -> ohne antialiasing 4
 }
 
 //is called on resize, mouse events, or value changes:
-void RenderArea::repaint(){
+void RenderArea::updateOutput(){
 
     //todo: dispatch partial pixmaps in here:
-    if(mScale==100)
+    if(true){//mScale==100){
         updatePixmap(dsizebuffer);
+        *paintarea = dsizebuffer->scaled(this->size(),Qt::KeepAspectRatioByExpanding,Qt::SmoothTransformation);
+    }
     else{
         //copy=deepcopy of part of pixmap
         int tWidth = dsizebuffer->width(), tHeight = dsizebuffer->height();
         QRect trect = dsizebuffer->rect();
+        //set start of rect, changes size
         trect.setX(tWidth/4);
         trect.setY(tHeight/4);
         trect.setSize(paintarea->size() );
-        *paintarea = dsizebuffer->copy(trect );//tWidth/4, tHeight/4, tWidth, tHeight );  //copy causes wrong sizechange without rect()
+        *paintarea = dsizebuffer->copy(trect );
         //*paintarea = dsizebuffer->scaled(,Qt::KeepAspectRatioByExpanding,Qt::SmoothTransformation);
         //updatePixmap(paintarea);
     }
@@ -506,14 +512,14 @@ void RenderArea::updatePixmap(QPixmap *targetmap){
                                 yStartOffset - yInterval/2 /tScale);
         mappainter->end();
         mappainter->begin(targetmap);
-        //only call to:
-        plotDrawer(this->mappainter,       //repaint main pixmap, to targetmap
+
+        plotDrawer(this->mappainter,       //repaint mathfunction to targetmap
                    startpoint,
                    step,
-                   targetmap->size() );
+                   targetmap->size() );     //startPoint + steps * targetsiz => drawing Interval (the variable mInterval is not used directly)
     }
-}
-
+}        //above, only call to:
+//plotts the given startPoint + steps*targetsize to a Paintdevice:
 void RenderArea::plotDrawer(QPainter *painter, QPointF startpnt, QPointF step,  QSize targetsize){
     int pixwidth = targetsize.width(), pixheight = targetsize.height();
     float ystart = startpnt.y();
