@@ -126,7 +126,7 @@ private:
 
     void lineDrawer(float step, float tIntervLength, float scale, QPointF center, QPainter &painter);
     void updateOutput();
-    void updatePixmap(QPixmap *targetmap);
+    void updatePixmap(QPixmap *targetmap, float intervalStart, float intervalEnd);
     void plotDrawer(QPainter *painter, QPointF startpnt, QPointF step, QSize targetsize);
 };
 

@@ -460,7 +460,7 @@ void RenderArea::updateOutput(){
 
     //todo: dispatch partial pixmaps in here:
     if(true){//mScale==100){
-        updatePixmap(dsizebuffer);
+        updatePixmap(dsizebuffer,-mIntervalLength, mIntervalLength);
         *paintarea = dsizebuffer->scaled(this->size(),Qt::KeepAspectRatioByExpanding,Qt::SmoothTransformation);
     }
     else{
@@ -477,14 +477,14 @@ void RenderArea::updateOutput(){
     }
 }
 
-void RenderArea::updatePixmap(QPixmap *targetmap){
+void RenderArea::updatePixmap(QPixmap *targetmap, float intervalStart, float intervalEnd){
     if(mShapeIndex >= getShapeIDbyName("mandel brot") ){
         int tWidth = targetmap->width(), tHeight = targetmap->height();
 //        int tWidth = this->width();
 //        int tHeight = this->height();
         infm.resize(tWidth*tHeight);
 
-        const float xInterval = mIntervalLength;     //mIntervalLength;
+        const float xInterval = (intervalEnd - intervalStart)/2;
         const float yInterval = xInterval * tHeight/tWidth;
         float tScale = mPreScale * mScale/100;      //preSc is set per Shape, mScale-slider:0..100..1000  => 0..1..10 *mPreScale mandel=1..100
 
@@ -509,7 +509,7 @@ void RenderArea::updatePixmap(QPixmap *targetmap){
 
         // 3. add the remaining half of the area-in-sight to the offsets, that equates to the final starting point
         QPointF startpoint = QPointF(xStartOffset - xInterval/2 /tScale,
-                                yStartOffset - yInterval/2 /tScale);
+                                     yStartOffset - yInterval/2 /tScale);
         mappainter->end();
         mappainter->begin(targetmap);
 
@@ -533,16 +533,15 @@ void RenderArea::plotDrawer(QPainter *painter, QPointF startpnt, QPointF step,  
         for(int w= 0; w < pixwidth; w++){
             QPointF result = QPointF(0,0);
             if(true){//set float calculation (not int calc = false)
-                if(!infm.at(pixcounter) )
+                //if(!infm.at(pixcounter) )   //check if pixel in bitmap is black
                     result = compute(xrun, ystart);
 
-                //iterations of the fractal scaled to color#   //modulo is useless, overflow does the same mostly.
-                // use two complement colors is best. more iterations then advance contrast and detail
-                float iter = result.y() / ((float)mStepCount) * 0x2ff;    //standart: *255 or 0xff
+            //iterations of the fractal scaled to color#   //modulo is useless, overflow does the same mostly.
+            // use two complement colors is best. more iterations then advance contrast and detail
                 //float i = result.y() / ((float)mStepCount) * 0xffffff;    //option psycho
-                unsigned int uiter = iter;
-                char r = 0, g = uiter>>1 & 0xff ,b = uiter & 0xff;
                 //char r = uiter>>16 & 0xff, g = uiter>>8 & 0xff ,b = uiter & 0xff;    //option psycho
+                unsigned int uiter = result.y() / mStepCount * 0x2ff;    //standart: *255 or 0xff
+                char r = 0, g = uiter>>1 & 0xff ,b = uiter & 0xff;
 
                 if(false){   //option crisp
                     float fRC = result.x();  //the abs-length of Complex causes some bright pixels
@@ -552,13 +551,13 @@ void RenderArea::plotDrawer(QPainter *painter, QPointF startpnt, QPointF step,  
                 QRgb color = qRgb( r, g, b);    //255,R,G,B
                 painter->setPen(color);
 
-                //when inf is not reached paint initially black=0
-                if(result.x() != 0){
-                    //painter->setPen(color);
-                    infm.at(pixcounter) = 1;
-                }else{
-                    //painter->setPen(Qt::black);
+                //when inf is not reached (==0) paint bit-mask black=0
+                if(result.x() == 0){
+                    painter->setPen(color);
                     infm.at(pixcounter) = 0;
+                }else{
+                    painter->setPen(Qt::black);
+                    infm.at(pixcounter) = 1;
                 }
             }else{
                 //int calculation is useless on mandel so far:
