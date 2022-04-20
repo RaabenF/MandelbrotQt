@@ -7,16 +7,19 @@
 //#include <QThread>
 #include <QThreadPool>
 
-class calcTask : public QRunnable
-{
-    void run() override{
-        qDebug() << "Hello world from thread" << QThread::currentThread();
-    }
-};
+//void calcTask::run(){
+//    //qDebug() << "Hello world from thread" << QThread::currentThread();
+//    //(RenderArea::*func)(RenderArea::targetmap, RenderArea::intervalStart, RenderArea::intervalEnd);
+//    //void (RenderArea::*func)(QPixmap*,float,float);//void (RenderArea::*func)(QPixmap*,float,float);
+
+//    //set pointer:
+//    updatePixmap = nullptr;
+//}
+
 
 RenderArea::RenderArea(QWidget *parent) :
-    QWidget(parent)
-      //init list:
+    //init list:
+    QWidget(parent)     //is set with mainwindow ui->setupUi() ?
     ,mBackgroundColor(Qt::darkBlue)
     ,mShapeColor(255, 255, 255)
     ,mPreScale(1), mIntervalLength(1), mStepCount(8), optionCool(false)
@@ -52,19 +55,25 @@ RenderArea::RenderArea(QWidget *parent) :
     dsizebuffer = new QPixmap(paintarea->size()*2 );
     mappainter = new QPainter(dsizebuffer);
 
-    calcTask *hello = new calcTask();
-    // QThreadPool takes ownership and deletes 'hello' automatically
-    QThreadPool::globalInstance()->start(hello);
-
-    QThreadPool threadpl = QThreadPool(this);
-    threadpl.setExpiryTimeout(-1);  //negative=dont destroy new threads
+    //QThreadPool threadpl = QThreadPool(this);
+    //threadpl.setExpiryTimeout(-1);  //negative=dont destroy new threads
 
     int idealth = QThread::idealThreadCount();
     if(idealth < 2){    // 1==unknown
-        threadpl.setMaxThreadCount(4);    //try 4 threads
+        QThreadPool::globalInstance()->setMaxThreadCount(2);    //try 4 threads
         qDebug()<< "Optimum Number of Threads could not be detected";
     }
     qDebug()<<"Optimum Threadnumber on your machine is: " << idealth;
+
+    void (RenderArea::*updatePixmap)(QPixmap*,float,float);
+    updatePixmap = (&RenderArea::updatePixmap);
+
+    //worker1 = new calcTask(updatePixmap);
+    //(worker1->*updatePixmap)(dsizebuffer,-mIntervalLength, mIntervalLength);
+
+    // QThreadPool takes ownership and deletes 'new thread' automatically
+    QThreadPool::globalInstance()->start(worker1);
+    //QThreadPool::globalInstance()
 
     qDebug()<<"initialization of Render Area done";
     //start threads as "class calcTask : public QRunnable" when needed, -> in setShape()
@@ -122,6 +131,7 @@ void RenderArea::mouseMoveEvent(QMouseEvent *event){
 }
 
 void RenderArea::mouseReleaseEvent(QMouseEvent *event){
+    Q_UNUSED(event);
     mMouseLB = false;
 }
 
@@ -460,7 +470,7 @@ void RenderArea::updateOutput(){
 
     //todo: dispatch partial pixmaps in here:
     if(true){//mScale==100){
-        updatePixmap(dsizebuffer,-mIntervalLength, mIntervalLength);
+        //updatePixmap(dsizebuffer,-mIntervalLength, mIntervalLength);
         *paintarea = dsizebuffer->scaled(this->size(),Qt::KeepAspectRatioByExpanding,Qt::SmoothTransformation);
     }
     else{
@@ -473,10 +483,10 @@ void RenderArea::updateOutput(){
         trect.setSize(paintarea->size() );
         *paintarea = dsizebuffer->copy(trect );
         //*paintarea = dsizebuffer->scaled(,Qt::KeepAspectRatioByExpanding,Qt::SmoothTransformation);
-        //updatePixmap(paintarea);
     }
+    qDebug() << "Active Threads: " << QThreadPool::globalInstance()->activeThreadCount();
 }
-
+//Interval enables calculating fixed-ratio square parts of the whole picture
 void RenderArea::updatePixmap(QPixmap *targetmap, float intervalStart, float intervalEnd){
     if(mShapeIndex >= getShapeIDbyName("mandel brot") ){
         int tWidth = targetmap->width(), tHeight = targetmap->height();

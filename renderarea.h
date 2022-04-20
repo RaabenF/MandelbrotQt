@@ -5,16 +5,14 @@
 #include <QPen>
 #include <complex>
 #include <QPixmap>
-//#include <QRunnable>
+#include <QRunnable>
 
-//class calcTask : public QRunnable{
-//    Q_OBJECT
-//    void run() override;
-//};
+class calcTask;
 
 class RenderArea : public QWidget   //RenderArea ist ein Objekt in UI
 {
     Q_OBJECT
+    friend class calcTask;
 public:
     explicit RenderArea(QWidget *parent = nullptr);
     ~RenderArea();
@@ -88,6 +86,8 @@ signals:
     void valueChanged();
 
 private:
+    calcTask *worker1 = nullptr;
+
     QList<ShapeType> shapestore;     //dynamische Qliste des structs, kann wie c array verwendet werden
     QPixmap *paintarea, *dsizebuffer;
     QPainter *mappainter;
@@ -126,8 +126,18 @@ private:
 
     void lineDrawer(float step, float tIntervLength, float scale, QPointF center, QPainter &painter);
     void updateOutput();
-    void updatePixmap(QPixmap *targetmap, float intervalStart, float intervalEnd);
     void plotDrawer(QPainter *painter, QPointF startpnt, QPointF step, QSize targetsize);
+    void updatePixmap(QPixmap *targetmap, float intervalStart, float intervalEnd);
+};
+
+class calcTask : public QRunnable{
+    //Q_OBJECT not necessary?
+public:                                                             //constructor hands over Member Function Pointer:
+    explicit calcTask(void(RenderArea::*updatePixmap)(QPixmap*,float,float) );
+
+private:
+    void run() override;
+
 };
 
 #endif // RENDERAREA_H
