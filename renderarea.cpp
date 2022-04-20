@@ -354,8 +354,8 @@ void RenderArea::lineDrawer(float step, float tIntervLength, float tScale, QPoin
 }
 
 QPointF RenderArea::compute_mandelb(float x,  float y){
-    std::complex<long double> Xvar(0,0);      //equals the Complex Number real=t * 1imag        #include <complex>
-    std::complex<long double> Cvar(x,y);      //float looks nice, too
+    std::complex<double> Xvar(0,0);      //equals the Complex Number real=t * 1imag        #include <complex>
+    std::complex<double> Cvar(x,y);      //float looks nice, too
 
     // X(i) = (X0)² + C
     for(int i=0; i<mStepCount; i++){
@@ -434,6 +434,7 @@ void RenderArea::updateOutput(){
     }
     qDebug() << "Active Threads: " << QThreadPool::globalInstance()->activeThreadCount();
 }
+
 //Interval enables calculating fixed-ratio square parts of the whole picture
 void RenderArea::updatePixmap(QPixmap *targetmap, float intervalStart, float intervalEnd){
     if(mShapeIndex >= getShapeIDbyName("mandel brot") ){
@@ -468,9 +469,9 @@ void RenderArea::updatePixmap(QPixmap *targetmap, float intervalStart, float int
         // 3. add the remaining half of the area-in-sight to the offsets, that equates to the final starting point
         QPointF startpoint = QPointF(xStartOffset - xInterval/2 /tScale,
                                      yStartOffset - yInterval/2 /tScale);
+
         mappainter->end();
         mappainter->begin(targetmap);
-
         plotDrawer(this->mappainter,       //repaint mathfunction to targetmap
                    startpoint,
                    step,

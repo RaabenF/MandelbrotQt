@@ -125,7 +125,7 @@ void RenderThread::run()
 
         //pass limited to 1
         int pass = 1;
-        const int MaxIterations = (1 << (2 * pass + 6)) + 32;   //2->20+32 4->28+32,
+        const int MaxIterations = (1 << (2 * pass + 6)) + 32;   //1->16+32 2->20+32 4->28+32 6->36+32 8->44+32 => it increases +4 per pass [48 ... 76]
         const int Limit = 4;
         bool allBlack = true;
 
@@ -161,7 +161,7 @@ void RenderThread::run()
                         break;
                 } while (numIterations < MaxIterations);
 
-                //CONTROL OF APPROXIMATIONS
+                //CONTROL OF APPROXIMATIONS:        MaxIterations increases with passes
                 if (numIterations < MaxIterations) {
                     *scanLine++ = colormap[numIterations % ColormapSize];
                     allBlack = false;
