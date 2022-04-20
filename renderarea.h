@@ -7,12 +7,9 @@
 #include <QPixmap>
 #include <QRunnable>
 
-class calcTask;
-
 class RenderArea : public QWidget   //RenderArea ist ein Objekt in UI
 {
     Q_OBJECT
-    friend class calcTask;
 public:
     explicit RenderArea(QWidget *parent = nullptr);
     ~RenderArea();
@@ -86,8 +83,6 @@ signals:
     void valueChanged();
 
 private:
-    calcTask *worker1 = nullptr;
-
     QList<ShapeType> shapestore;     //dynamische Qliste des structs, kann wie c array verwendet werden
     QPixmap *paintarea, *dsizebuffer;
     QPainter *mappainter;
@@ -108,7 +103,6 @@ private:
 
     QPointF compute(float x);           //dispatcher based on type
     QPointF compute(float x,  float y);
-    QPoint compute(int x, int y);
 
     QPointF compute_astroid(float x);
     QPointF compute_cycloid(float x);
@@ -122,22 +116,11 @@ private:
     QPointF compute_cloud(float x);
     QPointF compute_tilde(float x);
     QPointF compute_mandelb(float x,  float y);
-    QPoint compute_mandelb(int x,  int y);
 
     void lineDrawer(float step, float tIntervLength, float scale, QPointF center, QPainter &painter);
     void updateOutput();
     void plotDrawer(QPainter *painter, QPointF startpnt, QPointF step, QSize targetsize);
     void updatePixmap(QPixmap *targetmap, float intervalStart, float intervalEnd);
-};
-
-class calcTask : public QRunnable{
-    //Q_OBJECT not necessary?
-public:                                                             //constructor hands over Member Function Pointer:
-    explicit calcTask(void(RenderArea::*updatePixmap)(QPixmap*,float,float) );
-
-private:
-    void run() override;
-
 };
 
 #endif // RENDERAREA_H

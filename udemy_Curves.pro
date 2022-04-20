@@ -13,11 +13,13 @@ CONFIG += c++11
 SOURCES += \
     main.cpp \
     mainwindow.cpp \
-    renderarea.cpp
+    renderarea.cpp \
+    renderthread.cpp
 
 HEADERS += \
     mainwindow.h \
-    renderarea.h
+    renderarea.h \
+    renderthread.h
 
 FORMS += \
     mainwindow.ui

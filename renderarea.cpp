@@ -3,19 +3,15 @@
 #include <QPainter>
 //#include "mainwindow.h"
 
-#include <QRunnable>
-//#include <QThread>
 #include <QThreadPool>
+#include <QRunnable>
 
-//void calcTask::run(){
-//    //qDebug() << "Hello world from thread" << QThread::currentThread();
-//    //(RenderArea::*func)(RenderArea::targetmap, RenderArea::intervalStart, RenderArea::intervalEnd);
-//    //void (RenderArea::*func)(QPixmap*,float,float);//void (RenderArea::*func)(QPixmap*,float,float);
-
-//    //set pointer:
-//    updatePixmap = nullptr;
-//}
-
+class calcTask : public QRunnable
+{
+    void run() override{
+        qDebug() << "Hello world from thread" << QThread::currentThread();
+    }
+};
 
 RenderArea::RenderArea(QWidget *parent) :
     //init list:
@@ -55,24 +51,17 @@ RenderArea::RenderArea(QWidget *parent) :
     dsizebuffer = new QPixmap(paintarea->size()*2 );
     mappainter = new QPainter(dsizebuffer);
 
-    //QThreadPool threadpl = QThreadPool(this);
-    //threadpl.setExpiryTimeout(-1);  //negative=dont destroy new threads
-
     int idealth = QThread::idealThreadCount();
     if(idealth < 2){    // 1==unknown
         QThreadPool::globalInstance()->setMaxThreadCount(2);    //try 4 threads
         qDebug()<< "Optimum Number of Threads could not be detected";
     }
     qDebug()<<"Optimum Threadnumber on your machine is: " << idealth;
+    //threadpl.setExpiryTimeout(-1);  //negative=dont destroy new threads
 
-    void (RenderArea::*updatePixmap)(QPixmap*,float,float);
-    updatePixmap = (&RenderArea::updatePixmap);
-
-    //worker1 = new calcTask(updatePixmap);
-    //(worker1->*updatePixmap)(dsizebuffer,-mIntervalLength, mIntervalLength);
-
+    calcTask *hello = new calcTask();
     // QThreadPool takes ownership and deletes 'new thread' automatically
-    QThreadPool::globalInstance()->start(worker1);
+    QThreadPool::globalInstance()->start(hello);
     //QThreadPool::globalInstance()
 
     qDebug()<<"initialization of Render Area done";
@@ -288,17 +277,6 @@ QPointF RenderArea::compute(float x, float y){
     }
     return QPointF(0,0);
 }
-QPoint RenderArea::compute(int x, int y){
-    switch(mShapeIndex){
-    case 9:
-        return compute_mandelb(x, y);
-        break;
-    default:
-        return QPoint(0,0);
-        break;
-    }
-    return QPoint(0,0);
-}
 
 QPointF RenderArea::compute_astroid(float x){
     float xout = 2 * pow(cos(x),3);
@@ -394,27 +372,6 @@ QPointF RenderArea::compute_mandelb(float x,  float y){
     return endv;
 }
 
-QPoint RenderArea::compute_mandelb(int x,  int y){  //only float double and longdouble are guaranteed in std::complex
-    float a=x, b=y;
-    a /=100; b/=100;
-    std::complex<double> Xvar(0,0);
-    std::complex<double> Cvar(a,b);
-
-    // X(i) = (X0)² + C
-    for(int i=0; i<mStepCount; i++){
-        Xvar = Xvar * Xvar;     //Xval = std::pow(Xval,2);
-        Xvar += Cvar;           //X+C
-        if(std::isinf( Xvar.imag()) ){          //break at infinity
-            QPoint endv( Xvar.imag()*1000, i  );    //return Complex Value - in int
-            return endv;
-        }
-    }
-    QPoint endv( 0, mStepCount  );    //return Complex Value in fpoint
-    return endv;
-}
-
-
-
 void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wenn nötig, protected+override im .h
 {
     Q_UNUSED(event);        //deaktiviert Kompilerwarnung
@@ -450,13 +407,10 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
 
         painter.setPen(Qt::black);
         //draw paintarea buffer to screen:
-        if(mScale==100){
+        if(false){
             painter.drawPixmap(this->rect(), *dsizebuffer, dsizebuffer->rect() ); //target Area, pixmap source, source Area
-            //if(! (this->rect()==dsizebuffer->rect()) )qDebug() << "wrong pixmap size";
+            if(! (this->rect()==dsizebuffer->rect()) )qDebug() << "wrong pixmap size";
         }else{
-            //copy=deepcopy of part of pixmap
-            //*paintarea = dsizebuffer->scaled(,Qt::KeepAspectRatioByExpanding,Qt::SmoothTransformation);
-            //updatePixmap(paintarea);
             painter.drawPixmap(this->rect(), *paintarea, paintarea->rect() );
             if(! (this->rect()==paintarea->rect()) )qDebug() << "wrong pixmap size";
         }
@@ -469,8 +423,8 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
 void RenderArea::updateOutput(){
 
     //todo: dispatch partial pixmaps in here:
-    if(true){//mScale==100){
-        //updatePixmap(dsizebuffer,-mIntervalLength, mIntervalLength);
+    if(true){//mScale==100)
+        updatePixmap(dsizebuffer,-mIntervalLength, mIntervalLength);    //do actual calculate
         *paintarea = dsizebuffer->scaled(this->size(),Qt::KeepAspectRatioByExpanding,Qt::SmoothTransformation);
     }
     else{
@@ -542,10 +496,9 @@ void RenderArea::plotDrawer(QPainter *painter, QPointF startpnt, QPointF step,  
 
         for(int w= 0; w < pixwidth; w++){
             QPointF result = QPointF(0,0);
-            if(true){//set float calculation (not int calc = false)
-                //if(!infm.at(pixcounter) )   //check if pixel in bitmap is black
-                    result = compute(xrun, ystart);
 
+            //if(!infm.at(pixcounter) )   //check if pixel in bitmap is black
+                result = compute(xrun, ystart);
             //iterations of the fractal scaled to color#   //modulo is useless, overflow does the same mostly.
             // use two complement colors is best. more iterations then advance contrast and detail
                 //float i = result.y() / ((float)mStepCount) * 0xffffff;    //option psycho
@@ -569,15 +522,6 @@ void RenderArea::plotDrawer(QPainter *painter, QPointF startpnt, QPointF step,  
                     painter->setPen(Qt::black);
                     infm.at(pixcounter) = 1;
                 }
-            }else{
-                //int calculation is useless on mandel so far:
-                QPointF result = compute((int)(xrun*1000), (int)(ystart*1000) );
-                char Rcompl = result.x();   //length of Complex Number
-                char steps = result.y();    //iterations of the fractal?
-
-                QColor colorart( Rcompl, steps, 255-steps);    //0xRRGGBBAA
-                painter->setPen(colorart);
-            }
             //always:
             QPointF fpoint(w, h);       //area starts at (0,0)
             painter->drawPoint(fpoint);
