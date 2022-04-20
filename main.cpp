@@ -3,9 +3,18 @@
 #include <QApplication>
 #include <QScreen>
 
+#include <QCommandLineParser>
+//#include <QCommandLineOption>
+
 int main(int argc, char *argv[])
 {
     QApplication a(argc, argv);
+
+    QCommandLineParser parser;
+    parser.setApplicationDescription("Qt Mandelbrot Example");
+    parser.addHelpOption();
+    parser.addVersionOption();
+
     MainWindow w;
 
     if(false){

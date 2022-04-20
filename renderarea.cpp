@@ -354,8 +354,8 @@ void RenderArea::lineDrawer(float step, float tIntervLength, float tScale, QPoin
 }
 
 QPointF RenderArea::compute_mandelb(float x,  float y){
-    std::complex<double> Xvar(0,0);      //equals the Complex Number real=t * 1imag        #include <complex>
-    std::complex<double> Cvar(x,y);      //float looks nice, too
+    std::complex<long double> Xvar(0,0);      //equals the Complex Number real=t * 1imag        #include <complex>
+    std::complex<long double> Cvar(x,y);      //float looks nice, too
 
     // X(i) = (X0)² + C
     for(int i=0; i<mStepCount; i++){
@@ -380,11 +380,7 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
     painter.setBrush(mBackgroundColor );    //brush defines how shapes are filled
 
     //setShape(foo);    //verboten!!! calls repaint()-> rekursiv
-
     //std::complex<double> *complVal = new std::complex<double>(1,1);      //include <complex>
-
-    //painter.drawLine(this->rect().topLeft(), this->rect().bottomRight() );
-    //for (float t=0; t < tIntervLength; t += step){
 
     if (mDrawLine){
         //drawing area:
@@ -397,14 +393,12 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
         painter.setRenderHint(QPainter::Antialiasing, true);
         lineDrawer(step, tIntervLength, tScale, center, painter);
     }
-    else{
-        //the plotDrawer()-funcs are drawn asynchronous to a pixmap
+    else{       //start plot drawing process
         painter.setRenderHint(QPainter::Antialiasing, false);
         painter.setRenderHint(QPainter::TextAntialiasing, false);
         painter.setRenderHint(QPainter::SmoothPixmapTransform, false);
         painter.setRenderHint(QPainter::VerticalSubpixelPositioning, false);
         painter.setRenderHint(QPainter::LosslessImageRendering, false);
-
         painter.setPen(Qt::black);
         //draw paintarea buffer to screen:
         if(false){
