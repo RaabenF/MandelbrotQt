@@ -17,7 +17,7 @@ RenderArea::RenderArea(QWidget *parent) :
 //test, geht nicht wg kein append()
 //    shapetest[0]={     //Qlist(dynamic array) - vom struct
 //                    .id=999,
-//                    .name="dfg",    //, function_name;
+//                    .name="dfg",    //, calculation name;
 //                    .sPreScale=1,
 //                    .interval=1,     //Length; //8, M_PI;
 //                    .steps=1        //Count;
@@ -28,17 +28,17 @@ RenderArea::RenderArea(QWidget *parent) :
 //        shapestore[i]=
 //    }
     //                          ID,Name     Prescale,Interval,Steps, (x-,y-offs)
-    shapestore.append(paramShape(0,"Astroid",73,M_PI,256) );
-    shapestore.append(paramShape(1,"Cycloid",11,6 * M_PI,128) );
-    shapestore.append(paramShape(2,"HygensCycloid",35,2*M_PI,256) );
-    shapestore.append(paramShape(3,"HypoCycloid",55,M_PI,256) );
-    shapestore.append(paramShape(4,"Elipse",100,M_PI,128) );
-    shapestore.append(paramShape(5,"Mandala",8,6*M_PI,512) );
-    shapestore.append(paramShape(6,"Star",20,3*M_PI,256) );
-    shapestore.append(paramShape(7,"Cloud",10,14*M_PI,128) );
-    shapestore.append(paramShape(8,"Tilde",55,M_PI,256,0,0) );
-    shapestore.append(paramShape(9,"Mandel Brot",1, 3, 64, -200) );   //interval empfohlen: -3..3    steps ist die Auflösung der Berechnung
-    shapestore.append(paramShape(10,"tst",30,M_PI,256) );
+    shapestore.append(setShapeparameteres(0,"Astroid",73,M_PI,256) );
+    shapestore.append(setShapeparameteres(1,"Cycloid",11,6 * M_PI,128) );
+    shapestore.append(setShapeparameteres(2,"HygensCycloid",35,2*M_PI,256) );
+    shapestore.append(setShapeparameteres(3,"HypoCycloid",55,M_PI,256) );
+    shapestore.append(setShapeparameteres(4,"Elipse",100,M_PI,128) );
+    shapestore.append(setShapeparameteres(5,"Mandala",8,6*M_PI,512) );
+    shapestore.append(setShapeparameteres(6,"Star",20,3*M_PI,256) );
+    shapestore.append(setShapeparameteres(7,"Cloud",10,14*M_PI,128) );
+    shapestore.append(setShapeparameteres(8,"Tilde",55,M_PI,256,0,0) );
+    shapestore.append(setShapeparameteres(9,"Mandel Brot",1, 3, 64, -200) );   //interval empfohlen: -3..3    steps ist die Auflösung der Berechnung
+    shapestore.append(setShapeparameteres(10,"tst",30,M_PI,256) );
     //shapestore.append(paramShape(,"",10,M_PI,256) );      //copy me
 
     paintarea = new QPixmap(this->size() );    //inherits paintdevice
@@ -47,14 +47,29 @@ RenderArea::RenderArea(QWidget *parent) :
 
     int idealth = QThread::idealThreadCount();
     if(idealth < 2){    // 1==unknown
-        QThreadPool::globalInstance()->setMaxThreadCount(2);    //try 4 threads
+        QThreadPool::globalInstance()->setMaxThreadCount(2);    //try 4 threads?
         qDebug()<< "Optimum Number of Threads could not be detected";
     }
+
     qDebug()<<"Optimum Threadnumber on your machine is: " << idealth;
-    //threadpl.setExpiryTimeout(-1);  //negative=dont destroy new threads
+    QThreadPool::globalInstance()->setMaxThreadCount(idealth);
+    QThreadPool::globalInstance()->setExpiryTimeout(-1);  //negative=dont destroy new threads
+    for(int i=0; i<idealth; i++){
+        calctasks.append(new calcTask(this) );
+        //QThreadPool::globalInstance()->start(calctasks[i] );        // QThreadPool takes ownership and deletes 'new thread' automatically
+        qDebug() << "Threads: " << QThreadPool::globalInstance()->activeThreadCount();
+        //QThreadPool::globalInstance()
+
+        //init output the first time imediatly with normal sized pixmap:
+        //setupPixmap(paintarea,-mIntervalLength, mIntervalLength, calctasks.at(i) );    //sets up the Thread's Parameters as well
+
+        //do calculate, for init we must update when done
+
+        //hello->setThreadParams(QPointF startpnt, QPointF step, QSize targetsize);
+    }
+    qDebug() << "Active Threads: " << QThreadPool::globalInstance()->activeThreadCount();
 
     qDebug()<<"initialization of Render Area done";
-
 }
 RenderArea::~RenderArea(){
     delete mappainter;  //delete in this order
@@ -79,7 +94,7 @@ void RenderArea::resizeEvent(QResizeEvent *event){
         paintarea = new QPixmap(event->size() );
         dsizebuffer = new QPixmap(paintarea->size()*2 );
         mappainter = new QPainter(dsizebuffer);
-        updateOutput();
+        updatePixplotOutput();
     }
 
     event->accept();
@@ -98,7 +113,7 @@ void RenderArea::mouseMoveEvent(QMouseEvent *event){
         mtMouseMove -= event->pos() - mMousePos;
         if (mtMouseMove.manhattanLength() > 3){   //movement treshold
             if(!mDrawLine){
-                updateOutput();
+                updatePixplotOutput();
                 update();
             }
         }
@@ -149,10 +164,10 @@ void RenderArea::zoom(int steps){
     update();
 }
 
-RenderArea::ShapeType RenderArea::paramShape(unsigned int id, QString name, float preScale, float interval, int steps, float Xoffset, float Yoffset ){
+RenderArea::ShapeType RenderArea::setShapeparameteres(unsigned int id, QString name, float preScale, float interval, int steps, float Xoffset, float Yoffset ){
     ShapeType sdata = {     //Qlist(dynamic array) - vom struct
          .id=id,
-         .name=name,            //, function_name;
+         .name=name,            //, calculation name;
          .prescale=preScale,
          .interval=interval,    //Length; //8, M_PI;
          .steps=steps,           //Count;
@@ -199,14 +214,14 @@ unsigned int RenderArea::setShape (unsigned int row){
         infm->reserve(this->height()*this->width() );
         mDrawLine = false;
 
-        //todo: threads
+        //todo: add threads
 
     } else{
         infm->clear();
         mDrawLine = true;
     }
     //emit this->valueChanged();    //not needed till now
-    updateOutput();
+    updatePixplotOutput();
     return 0;   //return success
 }
 
@@ -371,15 +386,12 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
     //GESAMT DURCHLÄUFE 5, evtl wegen oversampling? -> ohne antialiasing 4
 }
 
-//is called on resize, mouse events, or value changes:
-void RenderArea::updateOutput(){
+
+//is called on (resize), mouse events (move, zoom), or value changes:
+void RenderArea::updatePixplotOutput(){
 
     //todo: dispatch partial pixmaps in here:
-    if(true){//mScale==100)
-        updatePixmap(dsizebuffer,-mIntervalLength, mIntervalLength);    //do actual calculate
-        *paintarea = dsizebuffer->scaled(this->size(),Qt::KeepAspectRatioByExpanding,Qt::SmoothTransformation);
-    }
-    else{
+    if(false){//mScale==100)
         //copy=deepcopy of part of pixmap
         int tWidth = dsizebuffer->width(), tHeight = dsizebuffer->height();
         QRect trect = dsizebuffer->rect();
@@ -389,12 +401,13 @@ void RenderArea::updateOutput(){
         trect.setSize(paintarea->size() );
         *paintarea = dsizebuffer->copy(trect );
         //*paintarea = dsizebuffer->scaled(,Qt::KeepAspectRatioByExpanding,Qt::SmoothTransformation);
+    }else{
+        *paintarea = dsizebuffer->scaled(this->size(),Qt::KeepAspectRatioByExpanding,Qt::SmoothTransformation);
     }
-    qDebug() << "Active Threads: " << QThreadPool::globalInstance()->activeThreadCount();
 }
 
 //Interval enables calculating fixed-ratio square parts of the whole picture
-void RenderArea::updatePixmap(QPixmap *targetmap, float intervalStart, float intervalEnd){
+void RenderArea::setupPixmap(QPixmap *targetmap, float intervalStart, float intervalEnd, calcTask *Thread){
     if(mShapeIndex >= getShapeIDbyName("mandel brot") ){
         int tWidth = targetmap->width(), tHeight = targetmap->height();
 //        int tWidth = this->width();
@@ -428,18 +441,15 @@ void RenderArea::updatePixmap(QPixmap *targetmap, float intervalStart, float int
         QPointF startpoint = QPointF(xStartOffset - xInterval/2 /tScale,
                                      yStartOffset - yInterval/2 /tScale);
 
+        //we need one painter per thread
         mappainter->end();
         mappainter->begin(targetmap);
 
-        calcTask *hello = new calcTask(this,
-                                       mappainter,       //repaint mathfunction to targetmap
-                                       startpoint,
-                                       step,
-                                       targetmap->size() );
-        // QThreadPool takes ownership and deletes 'new thread' automatically
-        QThreadPool::globalInstance()->start(hello);
-        //QThreadPool::globalInstance()
-        //start threads as "class calcTask : public QRunnable" when needed, -> in setShape()
+        Thread->tThreadParams->startpnt = startpoint;
+        Thread->tThreadParams->stepsize = step;
+        Thread->tThreadParams->targetsize = targetmap->size();
+
+        qDebug() << "Active Threads: " << QThreadPool::globalInstance()->activeThreadCount();
     }
 }
 
@@ -496,6 +506,8 @@ void calcTask::plotDrawer(QPainter *painter, unsigned int ShapeIndex, QPointF st
     }//Y-loop
 }
 
+
+
 QPointF calcTask::compute2(float x, float y, int *StepCount, unsigned int ShapeIndex){
     switch(ShapeIndex){
     case 9:
@@ -527,12 +539,24 @@ QPointF calcTask::compute_mandelb(float x,  float y, int *StepCount){
     return endv;
 }
 
-void calcTask::run(){
-    qDebug() << "Hello world from thread" << QThread::currentThread();
+
+
+
+
+calcTask::calcTask(RenderArea *parent)://, std::vector<bool> *infm, int *StepCount)
+    parent(parent)
+{
+
 }
 
-calcTask::calcTask(RenderArea *parent, QPainter *painter, QPointF startpnt, QPointF step,  QSize targetsize)//, std::vector<bool> *infm, int *StepCount)
-{
+calcTask::~calcTask(){
+    delete parent;
+    delete painter;
+    delete tThreadParams;
+}
+
+void calcTask::run(){
+    //qDebug() << "Hello world from thread" << QThread::currentThread();
     //parent->calcTask::plotDrawer(QPainter *painter, QPointF startpnt, QPointF step,  QSize targetsize, std::vector<bool> *infm, int *StepCount)
     this->plotDrawer(painter,
                    parent->mShapeIndex,
@@ -541,5 +565,24 @@ calcTask::calcTask(RenderArea *parent, QPainter *painter, QPointF startpnt, QPoi
                    targetsize,
                    parent->infm,
                    parent->mStepCount);     //startPoint + steps * targetsiz => drawing Interval (the variable mInterval is not used directly)
+    parent->calcTaskDone();
 }
+
+
+void calcTask::setThreadParams(QPointF startpnt, QPointF stepsize, QSize targetsize){
+    this->tThreadParams->thread = this;
+    this->tThreadParams->startpnt = startpnt;
+    this->tThreadParams->stepsize = stepsize;
+    this->tThreadParams->targetsize = targetsize;
+}
+
+
+
+
+
+
+
+
+
+
 

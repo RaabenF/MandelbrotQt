@@ -7,6 +7,52 @@
 #include <QPixmap>
 #include <QRunnable>
 
+
+class RenderArea;
+class calcTask;
+
+//type of threadparameters (for sharing between classes)
+typedef struct PFStart_PFstepsize_QSizeTarget{
+    calcTask *thread;
+    QPointF startpnt;
+    QPointF stepsize;
+    QSize targetsize;
+}ParameterStruct;
+
+
+
+class calcTask : public QRunnable
+{
+    //Q_OBJECT
+    friend class RenderArea;
+public:
+
+      //parent not optional-> no nullptr
+    explicit calcTask(RenderArea *parent);//, std::vector<bool> *infm, int *StepCount)
+    ~calcTask();
+
+    QPainter *painter;
+    void run() override;    //arguments must stay blank for override, therefore parameters are stored as members
+    void setThreadParams(QPointF startpnt, QPointF stepsize, QSize targetsize);
+
+    ParameterStruct *tThreadParams = new ParameterStruct;
+
+protected:
+
+private:
+    RenderArea *parent;
+    QPointF startpnt=QPointF(0,0);
+    QPointF step=QPointF(0.1,0.1);
+    QSize targetsize=QSize(320,240);
+
+    static QPointF compute2(float x,  float y, int *StepCount, unsigned int ShapeIndex);           //dispatcher based on type
+    static QPointF compute_mandelb(float x,  float y, int *StepCount);
+    void plotDrawer(QPainter *painter, unsigned int ShapeIndex, QPointF startpnt, QPointF step, QSize targetsize,std::vector<bool> *infm, int *StepCount);
+
+
+
+};
+
 class RenderArea : public QWidget   //RenderArea ist ein Objekt in UI
 {
     Q_OBJECT
@@ -19,10 +65,10 @@ public:
     QSize minimumSizeHint() const override; // Q_DECL_OVERRIDE; im Tutorial ist deprecated
     QSize sizeHint() const override;
 
-    void setBackgroundColor(QColor color) {mBackgroundColor = color; updateOutput(); update(); }  //setter, inline weil kurz
+    void setBackgroundColor(QColor color) {mBackgroundColor = color; updatePixplotOutput(); update(); }  //setter, inline weil kurz
     QColor backgroundColor() const { return mBackgroundColor; }             //getter, const schützt die Member vor Änderungen
 
-    void setShapeColor(QColor color) {mPen.setColor(color); updateOutput(); update(); }  //setter, inline weil kurz
+    void setShapeColor(QColor color) {mPen.setColor(color); updatePixplotOutput(); update(); }  //setter, inline weil kurz
     QColor ShapeColor() const { return mPen.color(); }             //getter, const schützt die Member vor Änderungen
 
     unsigned int getShapeIDbyName(QString name);
@@ -32,27 +78,27 @@ public:
 
     //unsigned int setShape (QString query);
 
-    void setInterval(float value) { mIntervalLength = value; updateOutput(); update(); }
+    void setInterval(float value) { mIntervalLength = value; updatePixplotOutput(); update(); }
     float Interval() const { return mIntervalLength; }
 
-    void setScale(int scale) { mScale = scale; updateOutput(); update(); }     //int->float is ok da nur ganze werte
+    void setScale(int scale) { mScale = scale; updatePixplotOutput(); update(); }     //int->float is ok da nur ganze werte
     float scale() const { return mScale; }
 
-    void setStepCount(qint64 count) {*mStepCount = count; updateOutput(); update(); }
+    void setStepCount(qint64 count) {*mStepCount = count; updatePixplotOutput(); update(); }
     int stepCount() const {return *mStepCount; }
 
-    void setCool(bool Cool) { optionCool = Cool; updateOutput(); update(); }
+    void setCool(bool Cool) { optionCool = Cool; updatePixplotOutput(); update(); }
     bool Cool() const { return optionCool; }
 
     typedef struct id_name_scale_interval_steps{      //tag optional
         unsigned int id;
-        QString name;               //, function_name;
+        QString name;               //, calculation name;
         float prescale, interval;   //Length; //8, M_PI;
         int steps;                  //Count;
         float Xoffset, Yoffset;
     }ShapeType;
 
-    ShapeType paramShape(
+    ShapeType setShapeparameteres(  //function
         unsigned int id,
         QString name,
         float sPreScale,
@@ -89,6 +135,9 @@ private:
     QPixmap *paintarea, *dsizebuffer;
     QPainter *mappainter;
     std::vector<bool> *infm = nullptr;     //pixelmask infinitymap
+    //std::vector<calcTask> *calctasks;
+    //calcTask** calctasks;
+    QList<calcTask*> calctasks;
 
     QColor mBackgroundColor;
     QColor mShapeColor;
@@ -118,25 +167,12 @@ private:
     static QPointF compute_tilde(float x);
 
     void lineDrawer(float step, float tIntervLength, float scale, QPointF center, QPainter &painter);
-    void updateOutput();
-    void updatePixmap(QPixmap *targetmap, float intervalStart, float intervalEnd);
+    void updatePixplotOutput();
+    void setupPixmap(QPixmap *targetmap, float intervalStart, float intervalEnd, calcTask *Thread);
+    void calcTaskDone(){update();}
+
 
     //void plotDrawer(QPainter *painter, QPointF startpnt, QPointF step, QSize targetsize,std::vector<bool> *infm, int *mStepCount);
-};
-
-class calcTask : public QRunnable
-{
-    //Q_OBJECT
-public:
-      //parent not optional-> no nullptr
-    explicit calcTask(RenderArea *parent, QPainter *painter, QPointF startpnt, QPointF step,  QSize targetsize);//, std::vector<bool> *infm, int *StepCount)
-
-    void run() override;
-
-    static QPointF compute2(float x,  float y, int *StepCount, unsigned int ShapeIndex);           //dispatcher based on type
-    static QPointF compute_mandelb(float x,  float y, int *StepCount);
-    void plotDrawer(QPainter *painter, unsigned int ShapeIndex, QPointF startpnt, QPointF step, QSize targetsize,std::vector<bool> *infm, int *StepCount);
-
 };
 
 #endif // RENDERAREA_H
