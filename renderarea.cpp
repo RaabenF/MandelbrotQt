@@ -33,7 +33,7 @@ RenderArea::RenderArea(QWidget *parent) :
 
 //    for(int i=0,i<99,i++){
 //        shapestore[i]=
-//    }plotDrawer
+//    }
     //                          ID,Name     Prescale,Interval,Steps, (x-,y-offs)
     shapestore.append(paramShape(0,"Astroid",73,M_PI,256) );
     shapestore.append(paramShape(1,"Cycloid",11,6 * M_PI,128) );
@@ -497,6 +497,12 @@ void RenderArea::plotDrawer(QPainter *painter, QPointF startpnt, QPointF step,  
 
             //if(!infm.at(pixcounter) )   //check if pixel in bitmap is black
                 result = compute(xrun, ystart);
+
+            //when inf is not reached (==0) paint bit-mask black=0
+            if(result.x() != 0){
+                painter->setPen(Qt::black);
+                infm->at(pixcounter) = 1;
+            }else{
             //iterations of the fractal scaled to color#   //modulo is useless, overflow does the same mostly.
             // use two complement colors is best. more iterations then advance contrast and detail
                 //float i = result.y() / ((float)mStepCount) * 0xffffff;    //option psycho
@@ -510,16 +516,10 @@ void RenderArea::plotDrawer(QPainter *painter, QPointF startpnt, QPointF step,  
                     r = iRC;
                 }
                 QRgb color = qRgb( r, g, b);    //255,R,G,B
-                painter->setPen(color);
 
-                //when inf is not reached (==0) paint bit-mask black=0
-                if(result.x() == 0){
-                    painter->setPen(color);
-                    infm->at(pixcounter) = 0;
-                }else{
-                    painter->setPen(Qt::black);
-                    infm->at(pixcounter) = 1;
-                }
+                painter->setPen(color);
+                infm->at(pixcounter) = 0;
+            }
             //always:
             QPointF fpoint(w, h);       //area starts at (0,0)
             painter->drawPoint(fpoint);
