@@ -10,6 +10,8 @@
 class RenderArea : public QWidget   //RenderArea ist ein Objekt in UI
 {
     Q_OBJECT
+    friend class calcTask;
+
 public:
     explicit RenderArea(QWidget *parent = nullptr);
     ~RenderArea();
@@ -26,7 +28,7 @@ public:
     unsigned int getShapeIDbyName(QString name);
 
     unsigned int setShape (unsigned int row);
-    unsigned int getActShapeID() const { return mShapeIndex; }
+    unsigned int getShapeIndexID() const { return mShapeIndex; }
 
     //unsigned int setShape (QString query);
 
@@ -92,7 +94,7 @@ private:
     QColor mShapeColor;
     QPen mPen;
 
-    unsigned int mShapeIndex=0;
+    unsigned int mShapeIndex;
     float mPreScale, mIntervalLength;
     int *mStepCount=nullptr;
     qint64 mScale=100;    //maybe convert to exponential, longlongint. type is guaranteed 64-bit on all platforms supported by Qt
@@ -101,26 +103,40 @@ private:
     bool mMouseLB=false;
     const bool mScaleSteps = true;
 
-    QPointF compute(float x);           //dispatcher based on type
-    QPointF compute(float x,  float y);
+    static QPointF compute(float x, unsigned int ShapeIndex);           //dispatcher based on type
 
-    QPointF compute_astroid(float x);
-    QPointF compute_cycloid(float x);
-    QPointF compute_huygens(float x);
-    QPointF compute_hypo(float x);
-    QPointF compute_line(float x);
-    QPointF compute_circle(float x);
-    QPointF compute_elipse(float x);
-    QPointF compute_mandala(float x);
-    QPointF compute_star(float x);
-    QPointF compute_cloud(float x);
-    QPointF compute_tilde(float x);
-    QPointF compute_mandelb(float x,  float y);
+    static QPointF compute_astroid(float x);
+    static QPointF compute_cycloid(float x);
+    static QPointF compute_huygens(float x);
+    static QPointF compute_hypo(float x);
+    static QPointF compute_line(float x);
+    static QPointF compute_circle(float x);
+    static QPointF compute_elipse(float x);
+    static QPointF compute_mandala(float x);
+    static QPointF compute_star(float x);
+    static QPointF compute_cloud(float x);
+    static QPointF compute_tilde(float x);
 
     void lineDrawer(float step, float tIntervLength, float scale, QPointF center, QPainter &painter);
     void updateOutput();
-    void plotDrawer(QPainter *painter, QPointF startpnt, QPointF step, QSize targetsize,std::vector<bool> *infm, int *mStepCount);
     void updatePixmap(QPixmap *targetmap, float intervalStart, float intervalEnd);
+
+    //void plotDrawer(QPainter *painter, QPointF startpnt, QPointF step, QSize targetsize,std::vector<bool> *infm, int *mStepCount);
+};
+
+class calcTask : public QRunnable
+{
+    //Q_OBJECT
+public:
+      //parent not optional-> no nullptr
+    explicit calcTask(RenderArea *parent, QPainter *painter, QPointF startpnt, QPointF step,  QSize targetsize);//, std::vector<bool> *infm, int *StepCount)
+
+    void run() override;
+
+    static QPointF compute2(float x,  float y, int *StepCount, unsigned int ShapeIndex);           //dispatcher based on type
+    static QPointF compute_mandelb(float x,  float y, int *StepCount);
+    void plotDrawer(QPainter *painter, unsigned int ShapeIndex, QPointF startpnt, QPointF step, QSize targetsize,std::vector<bool> *infm, int *StepCount);
+
 };
 
 #endif // RENDERAREA_H

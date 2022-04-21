@@ -106,7 +106,7 @@ void MainWindow::on_lvShape_clicked(const QModelIndex &index)   //listview click
     //QString itemText = index.data(Qt::DisplayRole).toString();    //Text des List Items
     ui->renderArea->setShape(index.row() );
     //set resolution of the step spinner
-    if(ui->renderArea->getActShapeID() >= ui->renderArea->getShapeIDbyName("mandel brot") ) setStepSpinnerStep(1);
+    if(ui->renderArea->getShapeIndexID() >= ui->renderArea->getShapeIDbyName("mandel brot") ) setStepSpinnerStep(1);
     else setStepSpinnerStep(32);
 
     update_ui();

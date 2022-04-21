@@ -6,13 +6,6 @@
 #include <QThreadPool>
 #include <QRunnable>
 
-class calcTask : public QRunnable
-{
-    void run() override{
-        qDebug() << "Hello world from thread" << QThread::currentThread();
-    }
-};
-
 RenderArea::RenderArea(QWidget *parent) :
     //init list:
     QWidget(parent)     //is set with mainwindow ui->setupUi() ?
@@ -60,13 +53,7 @@ RenderArea::RenderArea(QWidget *parent) :
     qDebug()<<"Optimum Threadnumber on your machine is: " << idealth;
     //threadpl.setExpiryTimeout(-1);  //negative=dont destroy new threads
 
-    calcTask *hello = new calcTask();
-    // QThreadPool takes ownership and deletes 'new thread' automatically
-    QThreadPool::globalInstance()->start(hello);
-    //QThreadPool::globalInstance()
-
     qDebug()<<"initialization of Render Area done";
-    //start threads as "class calcTask : public QRunnable" when needed, -> in setShape()
 
 }
 RenderArea::~RenderArea(){
@@ -232,8 +219,8 @@ unsigned int RenderArea::getShapeIDbyName(QString name){
     return 0;   //else return standartvalue
 }
 
-QPointF RenderArea::compute(float x){
-    switch(mShapeIndex){
+QPointF RenderArea::compute(float x, unsigned int ShapeIndex){
+    switch(ShapeIndex){
     case 0:
         return compute_astroid(x);
         break;
@@ -260,17 +247,6 @@ QPointF RenderArea::compute(float x){
         break;
     case 8:
         return compute_tilde(x);
-        break;
-    default:
-        return  compute_line(x);
-        break;
-    }
-    return QPointF(0,0);
-}
-QPointF RenderArea::compute(float x, float y){
-    switch(mShapeIndex){
-    case 9:
-        return compute_mandelb(x, y);
         break;
     default:
         return  compute_line(x);
@@ -339,11 +315,11 @@ void RenderArea::lineDrawer(float step, float tIntervLength, float tScale, QPoin
     mPen.setColor(Qt::white);        // wegmachen hier aus paint??
     painter.setPen(mPen);   //draw with the pen
 
-    QPointF fprevPixel = compute(-tIntervLength) * tScale + center;    //first point
+    QPointF fprevPixel = compute(-tIntervLength, mShapeIndex) * tScale + center;    //first point
 
     for (float x= -tIntervLength; x < tIntervLength; x += step){    //drawing center focused is probably safest way
         //draws a line between actual and previous point
-        QPointF fpoint = compute(x) * tScale + center;
+        QPointF fpoint = compute(x, mShapeIndex) * tScale + center;
         //konvertiere Float2D zu Int(Pixel)2D, unnötig
         //        QPoint pixel;
         //        pixel.setX(fpoint.x() * tScale + center.x() );
@@ -352,25 +328,6 @@ void RenderArea::lineDrawer(float step, float tIntervLength, float tScale, QPoin
         painter.drawLine(fpoint, fprevPixel);
         fprevPixel = fpoint;
     }//X-loop
-}
-
-QPointF RenderArea::compute_mandelb(float x,  float y){
-    std::complex<double> Xvar(0,0);      //equals the Complex Number real=t * 1imag        #include <complex>
-    std::complex<double> Cvar(x,y);      //float looks nice, too
-
-    // X(i) = (X0)² + C
-    for(int i=0; i<*mStepCount; i++){
-        Xvar = Xvar * Xvar;     // Xval² = std::pow(Xval,2);
-        Xvar += Cvar;           // X+C
-
-        if(std::isinf( Xvar.real()) ){          //break at infinity
-            QPointF endv( 0, i  );    //return number of iterations
-            return endv;
-        }
-    }
-    //std::abs(Xvar) std::arg(Xvar)     arg=angular=phase angle, abs=total length of C
-    QPointF endv( std::abs(Xvar), *mStepCount);    //return Complex Value, and Iterations, in fpoint
-    return endv;
 }
 
 void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wenn nötig, protected+override im .h
@@ -473,16 +430,22 @@ void RenderArea::updatePixmap(QPixmap *targetmap, float intervalStart, float int
 
         mappainter->end();
         mappainter->begin(targetmap);
-        plotDrawer(this->mappainter,       //repaint mathfunction to targetmap
-                   startpoint,
-                   step,
-                   targetmap->size(),
-                   infm,
-                   mStepCount);     //startPoint + steps * targetsiz => drawing Interval (the variable mInterval is not used directly)
+
+        calcTask *hello = new calcTask(this,
+                                       mappainter,       //repaint mathfunction to targetmap
+                                       startpoint,
+                                       step,
+                                       targetmap->size() );
+        // QThreadPool takes ownership and deletes 'new thread' automatically
+        QThreadPool::globalInstance()->start(hello);
+        //QThreadPool::globalInstance()
+        //start threads as "class calcTask : public QRunnable" when needed, -> in setShape()
     }
-}        //above, only call to:
+}
+
+//above, only call to:
 //plotts the given startPoint + steps*targetsize to a Paintdevice:
-void RenderArea::plotDrawer(QPainter *painter, QPointF startpnt, QPointF step,  QSize targetsize, std::vector<bool> *infm, int *mStepCount){
+void calcTask::plotDrawer(QPainter *painter, unsigned int ShapeIndex, QPointF startpnt, QPointF step,  QSize targetsize, std::vector<bool> *infm, int *StepCount){
     int pixwidth = targetsize.width(), pixheight = targetsize.height();
     float ystart = startpnt.y();
     int pixcounter=0;
@@ -496,7 +459,7 @@ void RenderArea::plotDrawer(QPainter *painter, QPointF startpnt, QPointF step,  
             QPointF result = QPointF(0,0);
 
             //if(!infm.at(pixcounter) )   //check if pixel in bitmap is black
-                result = compute(xrun, ystart);
+                result = compute2(xrun, ystart, StepCount, ShapeIndex);
 
             //when inf is not reached (==0) paint bit-mask black=0
             if(result.x() != 0){
@@ -505,9 +468,9 @@ void RenderArea::plotDrawer(QPainter *painter, QPointF startpnt, QPointF step,  
             }else{
             //iterations of the fractal scaled to color#   //modulo is useless, overflow does the same mostly.
             // use two complement colors is best. more iterations then advance contrast and detail
-                //float i = result.y() / ((float)mStepCount) * 0xffffff;    //option psycho
+                //float i = result.y() / ((float)*StepCount) * 0xffffff;    //option psycho
                 //char r = uiter>>16 & 0xff, g = uiter>>8 & 0xff ,b = uiter & 0xff;    //option psycho
-                unsigned int uiter = result.y() / *mStepCount * 0x2ff;    //standart: *255 or 0xff
+                unsigned int uiter = result.y() / *StepCount * 0x2ff;    //standart: *255 or 0xff
                 char r = 0, g = uiter>>1 & 0xff ,b = uiter & 0xff;
 
                 if(false){   //option crisp
@@ -533,7 +496,50 @@ void RenderArea::plotDrawer(QPainter *painter, QPointF startpnt, QPointF step,  
     }//Y-loop
 }
 
+QPointF calcTask::compute2(float x, float y, int *StepCount, unsigned int ShapeIndex){
+    switch(ShapeIndex){
+    case 9:
+        return calcTask::compute_mandelb(x, y, StepCount);
+        break;
+    default:
+        return  RenderArea::compute_line(x);
+        break;
+    }
+    return QPointF(0,0);
+}
 
+QPointF calcTask::compute_mandelb(float x,  float y, int *StepCount){
+    std::complex<double> Xvar(0,0);      //equals the Complex Number real=t * 1imag        #include <complex>
+    std::complex<double> Cvar(x,y);      //float looks nice, too
 
+    // X(i) = (X0)² + C
+    for(int i=0; i < *StepCount; i++){
+        Xvar = Xvar * Xvar;     // Xval² = std::pow(Xval,2);
+        Xvar += Cvar;           // X+C
 
+        if(std::isinf( Xvar.real()) ){          //break at infinity
+            QPointF endv( 0, i  );    //return number of iterations
+            return endv;
+        }
+    }
+    //std::abs(Xvar) std::arg(Xvar)     arg=angular=phase angle, abs=total length of C
+    QPointF endv( std::abs(Xvar), *StepCount);    //return Complex Value, and Iterations, in fpoint
+    return endv;
+}
+
+void calcTask::run(){
+    qDebug() << "Hello world from thread" << QThread::currentThread();
+}
+
+calcTask::calcTask(RenderArea *parent, QPainter *painter, QPointF startpnt, QPointF step,  QSize targetsize)//, std::vector<bool> *infm, int *StepCount)
+{
+    //parent->calcTask::plotDrawer(QPainter *painter, QPointF startpnt, QPointF step,  QSize targetsize, std::vector<bool> *infm, int *StepCount)
+    this->plotDrawer(painter,
+                   parent->mShapeIndex,
+                   startpnt,
+                   step,
+                   targetsize,
+                   parent->infm,
+                   parent->mStepCount);     //startPoint + steps * targetsiz => drawing Interval (the variable mInterval is not used directly)
+}
 
