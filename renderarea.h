@@ -36,8 +36,8 @@ public:
     void setScale(int scale) { mScale = scale; updateOutput(); update(); }     //int->float is ok da nur ganze werte
     float scale() const { return mScale; }
 
-    void setStepCount(qint64 count) {mStepCount = count; updateOutput(); update(); }
-    int stepCount() const {return mStepCount; }
+    void setStepCount(qint64 count) {*mStepCount = count; updateOutput(); update(); }
+    int stepCount() const {return *mStepCount; }
 
     void setCool(bool Cool) { optionCool = Cool; updateOutput(); update(); }
     bool Cool() const { return optionCool; }
@@ -86,7 +86,7 @@ private:
     QList<ShapeType> shapestore;     //dynamische Qliste des structs, kann wie c array verwendet werden
     QPixmap *paintarea, *dsizebuffer;
     QPainter *mappainter;
-    std::vector<bool> infm;     //pixelmask infinitymap
+    std::vector<bool> *infm = nullptr;     //pixelmask infinitymap
 
     QColor mBackgroundColor;
     QColor mShapeColor;
@@ -94,7 +94,7 @@ private:
 
     unsigned int mShapeIndex=0;
     float mPreScale, mIntervalLength;
-    int mStepCount;
+    int *mStepCount=nullptr;
     qint64 mScale=100;    //maybe convert to exponential, longlongint. type is guaranteed 64-bit on all platforms supported by Qt
 
     bool optionCool, mDrawLine;
@@ -119,7 +119,7 @@ private:
 
     void lineDrawer(float step, float tIntervLength, float scale, QPointF center, QPainter &painter);
     void updateOutput();
-    void plotDrawer(QPainter *painter, QPointF startpnt, QPointF step, QSize targetsize);
+    void plotDrawer(QPainter *painter, QPointF startpnt, QPointF step, QSize targetsize,std::vector<bool> *infm, int *mStepCount);
     void updatePixmap(QPixmap *targetmap, float intervalStart, float intervalEnd);
 };
 

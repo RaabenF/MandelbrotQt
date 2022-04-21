@@ -16,9 +16,10 @@ class calcTask : public QRunnable
 RenderArea::RenderArea(QWidget *parent) :
     //init list:
     QWidget(parent)     //is set with mainwindow ui->setupUi() ?
+    ,infm(new std::vector<bool>)
     ,mBackgroundColor(Qt::darkBlue)
     ,mShapeColor(255, 255, 255)
-    ,mPreScale(1), mIntervalLength(1), mStepCount(8), optionCool(false)
+    ,mPreScale(1), mIntervalLength(1), mStepCount(new int(8)), optionCool(false)
 {
 //test, geht nicht wg kein append()
 //    shapetest[0]={     //Qlist(dynamic array) - vom struct
@@ -32,7 +33,7 @@ RenderArea::RenderArea(QWidget *parent) :
 
 //    for(int i=0,i<99,i++){
 //        shapestore[i]=
-//    }
+//    }plotDrawer
     //                          ID,Name     Prescale,Interval,Steps, (x-,y-offs)
     shapestore.append(paramShape(0,"Astroid",73,M_PI,256) );
     shapestore.append(paramShape(1,"Cycloid",11,6 * M_PI,128) );
@@ -148,11 +149,11 @@ void RenderArea::zoom(int steps){
     //if(this->underMouse() ){
     if(!mDrawLine){
         if (steps>0) {
-            if(mScaleSteps)setStepCount(mStepCount * (zoomscale) );
+            if(mScaleSteps)setStepCount(*mStepCount * (zoomscale) );
             mtMouseMove -= (this->rect().center() - pos);
             setScale(mScale*2 );
         }else if(steps<0){
-            if(mScaleSteps)setStepCount(mStepCount / (zoomscale) );
+            if(mScaleSteps)setStepCount(*mStepCount / (zoomscale) );
             mtMouseMove += (this->rect().center() - pos)/2;
             setScale(mScale/2 );
         }
@@ -177,7 +178,7 @@ RenderArea::ShapeType RenderArea::paramShape(unsigned int id, QString name, floa
 //    default:                                                //wichtig, default sollte immer gemacht werden
 //        mPreScale = 80;
 //        mIntervalLength = M_PI; //2 * M_PI;
-//        mStepCount = 256;
+//        *mStepCount = 256;
 //        setBackgroundColor(QColorConstants::DarkYellow);
 //        break;
 
@@ -191,7 +192,7 @@ unsigned int RenderArea::setShape (unsigned int row){
         mShapeIndex = row;        //setter
         mPreScale = shapestore[mShapeIndex].prescale;
         mIntervalLength = shapestore[mShapeIndex].interval;
-        mStepCount = shapestore[mShapeIndex].steps;
+        *mStepCount = shapestore[mShapeIndex].steps;
         mXoffset = shapestore[mShapeIndex].Xoffset;
         mYoffset = shapestore[mShapeIndex].Yoffset;
         mScale=100; //uncomment to keep zoom on change
@@ -208,13 +209,13 @@ unsigned int RenderArea::setShape (unsigned int row){
     }
     //init plotter specific stuff
     if(mShapeIndex >= getShapeIDbyName("mandel brot") ){
-        infm.reserve(this->height()*this->width() );
+        infm->reserve(this->height()*this->width() );
         mDrawLine = false;
 
         //todo: threads
 
     } else{
-        infm.clear();
+        infm->clear();
         mDrawLine = true;
     }
     //emit this->valueChanged();    //not needed till now
@@ -358,7 +359,7 @@ QPointF RenderArea::compute_mandelb(float x,  float y){
     std::complex<double> Cvar(x,y);      //float looks nice, too
 
     // X(i) = (X0)² + C
-    for(int i=0; i<mStepCount; i++){
+    for(int i=0; i<*mStepCount; i++){
         Xvar = Xvar * Xvar;     // Xval² = std::pow(Xval,2);
         Xvar += Cvar;           // X+C
 
@@ -368,7 +369,7 @@ QPointF RenderArea::compute_mandelb(float x,  float y){
         }
     }
     //std::abs(Xvar) std::arg(Xvar)     arg=angular=phase angle, abs=total length of C
-    QPointF endv( std::abs(Xvar), mStepCount);    //return Complex Value, and Iterations, in fpoint
+    QPointF endv( std::abs(Xvar), *mStepCount);    //return Complex Value, and Iterations, in fpoint
     return endv;
 }
 
@@ -386,7 +387,7 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
         //drawing area:
         painter.drawRect(this->rect() );
         QPointF center = this->rect().center();     // war im tut kein floatP, ist aber egal, konvertierung erfolgt auch automatisch
-        float step = mIntervalLength / mStepCount;
+        float step = mIntervalLength / *mStepCount;
         float tIntervLength = mIntervalLength + step;
         float tScale = mPreScale * mScale/100;      //preSc is set per Shape, mScale-slider:0..100..1000  => 0..1..10 *mPreScale mandel=1..100
 
@@ -441,7 +442,7 @@ void RenderArea::updatePixmap(QPixmap *targetmap, float intervalStart, float int
         int tWidth = targetmap->width(), tHeight = targetmap->height();
 //        int tWidth = this->width();
 //        int tHeight = this->height();
-        infm.resize(tWidth*tHeight);
+        infm->resize(tWidth*tHeight);
 
         const float xInterval = (intervalEnd - intervalStart)/2;
         const float yInterval = xInterval * tHeight/tWidth;
@@ -475,11 +476,13 @@ void RenderArea::updatePixmap(QPixmap *targetmap, float intervalStart, float int
         plotDrawer(this->mappainter,       //repaint mathfunction to targetmap
                    startpoint,
                    step,
-                   targetmap->size() );     //startPoint + steps * targetsiz => drawing Interval (the variable mInterval is not used directly)
+                   targetmap->size(),
+                   infm,
+                   mStepCount);     //startPoint + steps * targetsiz => drawing Interval (the variable mInterval is not used directly)
     }
 }        //above, only call to:
 //plotts the given startPoint + steps*targetsize to a Paintdevice:
-void RenderArea::plotDrawer(QPainter *painter, QPointF startpnt, QPointF step,  QSize targetsize){
+void RenderArea::plotDrawer(QPainter *painter, QPointF startpnt, QPointF step,  QSize targetsize, std::vector<bool> *infm, int *mStepCount){
     int pixwidth = targetsize.width(), pixheight = targetsize.height();
     float ystart = startpnt.y();
     int pixcounter=0;
@@ -498,7 +501,7 @@ void RenderArea::plotDrawer(QPainter *painter, QPointF startpnt, QPointF step,  
             // use two complement colors is best. more iterations then advance contrast and detail
                 //float i = result.y() / ((float)mStepCount) * 0xffffff;    //option psycho
                 //char r = uiter>>16 & 0xff, g = uiter>>8 & 0xff ,b = uiter & 0xff;    //option psycho
-                unsigned int uiter = result.y() / mStepCount * 0x2ff;    //standart: *255 or 0xff
+                unsigned int uiter = result.y() / *mStepCount * 0x2ff;    //standart: *255 or 0xff
                 char r = 0, g = uiter>>1 & 0xff ,b = uiter & 0xff;
 
                 if(false){   //option crisp
@@ -512,10 +515,10 @@ void RenderArea::plotDrawer(QPainter *painter, QPointF startpnt, QPointF step,  
                 //when inf is not reached (==0) paint bit-mask black=0
                 if(result.x() == 0){
                     painter->setPen(color);
-                    infm.at(pixcounter) = 0;
+                    infm->at(pixcounter) = 0;
                 }else{
                     painter->setPen(Qt::black);
-                    infm.at(pixcounter) = 1;
+                    infm->at(pixcounter) = 1;
                 }
             //always:
             QPointF fpoint(w, h);       //area starts at (0,0)
