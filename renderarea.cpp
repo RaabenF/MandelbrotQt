@@ -55,8 +55,8 @@ RenderArea::RenderArea(QWidget *parent) :
     QThreadPool::globalInstance()->setMaxThreadCount(idealth);
     QThreadPool::globalInstance()->setExpiryTimeout(-1);  //negative=dont destroy new threads
     for(int i=0; i<idealth; i++){
-        calctasks.append(new calcTask(this) );
-        //QThreadPool::globalInstance()->start(calctasks[i] );        // QThreadPool takes ownership and deletes 'new thread' automatically
+        calctasks[i] = new calcTask(this) ;
+        QThreadPool::globalInstance()->start(calctasks[i] );        // QThreadPool takes ownership and deletes 'new thread' automatically
         qDebug() << "Threads: " << QThreadPool::globalInstance()->activeThreadCount();
         //QThreadPool::globalInstance()
 

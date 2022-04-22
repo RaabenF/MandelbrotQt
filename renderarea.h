@@ -136,8 +136,8 @@ private:
     QPainter *mappainter;
     std::vector<bool> *infm = nullptr;     //pixelmask infinitymap
     //std::vector<calcTask> *calctasks;
-    //calcTask** calctasks;
-    QList<calcTask*> calctasks;
+    calcTask *calctasks[32];
+    //QList<calcTask*> calctasks;
 
     QColor mBackgroundColor;
     QColor mShapeColor;
