@@ -9,49 +9,46 @@
 
 
 class RenderArea;
-class calcTask;
-
-//type of threadparameters (for sharing between classes)
-typedef struct PFStart_PFstepsize_QSizeTarget{
-    calcTask *thread;
-    QPointF startpnt;
-    QPointF stepsize;
-    QSize targetsize;
-}ParameterStruct;
-
-
 
 class calcTask : public QRunnable
 {
     //Q_OBJECT
     friend class RenderArea;
 public:
-
       //parent not optional-> no nullptr
-    explicit calcTask(RenderArea *parent);//, std::vector<bool> *infm, int *StepCount)
+    explicit calcTask(RenderArea *parent, QPointF startpnt, QPointF stepsize, QSize targetsize);//, std::vector<bool> *infm, int *StepCount)
     ~calcTask();
 
-    QPainter *painter;
     void run() override;    //arguments must stay blank for override, therefore parameters are stored as members
-    void setThreadParams(QPointF startpnt, QPointF stepsize, QSize targetsize);
+    //void setThreadParams(QPointF startpnt, QPointF stepsize, QSize targetsize);
 
-    ParameterStruct *tThreadParams = new ParameterStruct;
 
 protected:
 
 private:
     RenderArea *parent;
-    QPointF startpnt=QPointF(0,0);
-    QPointF step=QPointF(0.1,0.1);
-    QSize targetsize=QSize(320,240);
+    QPixmap *thrdmap;
+    QPainter *thrdpainter;
+    //type of threadparameters (for sharing between classes)
+    typedef struct PFStart_PFstepsize_QSizeTarget{
+        calcTask *thread;
+        QPointF startpnt;
+        QPointF stepsize;
+        QSize targetsize;
+    }ParameterStruct;
+    ParameterStruct *tThreadParams = new ParameterStruct;
 
-    static QPointF compute2(float x,  float y, int *StepCount, unsigned int ShapeIndex);           //dispatcher based on type
-    static QPointF compute_mandelb(float x,  float y, int *StepCount);
-    void plotDrawer(QPainter *painter, unsigned int ShapeIndex, QPointF startpnt, QPointF step, QSize targetsize,std::vector<bool> *infm, int *StepCount);
+//    QPointF startpnt=QPointF(0,0);
+//    QPointF step=QPointF(0.1,0.1);
+//    QSize targetsize=QSize(320,240);
 
-
+    static QPointF compute2(float x,  float y, int StepCount, unsigned int ShapeIndex);           //dispatcher based on type
+    static QPointF compute_mandelb(float x,  float y, int StepCount);
+    void plotDrawer(QPainter *painter, unsigned int ShapeIndex, QPointF startpnt, QPointF step, QSize targetsize,std::vector<bool> *infm, int StepCount);
 
 };
+
+
 
 class RenderArea : public QWidget   //RenderArea ist ein Objekt in UI
 {
@@ -84,8 +81,8 @@ public:
     void setScale(int scale) { mScale = scale; updatePixplotOutput(); update(); }     //int->float is ok da nur ganze werte
     float scale() const { return mScale; }
 
-    void setStepCount(qint64 count) {*mStepCount = count; updatePixplotOutput(); update(); }
-    int stepCount() const {return *mStepCount; }
+    void setStepCount(unsigned int count) {mStepCount = count; updatePixplotOutput(); update(); }
+    int stepCount() const {return mStepCount; }
 
     void setCool(bool Cool) { optionCool = Cool; updatePixplotOutput(); update(); }
     bool Cool() const { return optionCool; }
@@ -131,21 +128,20 @@ signals:
     void valueChanged();
 
 private:
+    QList<calcTask*> *mCalcTasks;
+    bool mTaskdone=true;
+    unsigned int mMaxThreads = 1, mMThrdSqrt = 0, mThreads = 0;
     QList<ShapeType> shapestore;     //dynamische Qliste des structs, kann wie c array verwendet werden
     QPixmap *paintarea, *dsizebuffer;
-    QPainter *mappainter;
-    std::vector<bool> *infm = nullptr;     //pixelmask infinitymap
-    //std::vector<calcTask> *calctasks;
-    calcTask *calctasks[32];
-    //QList<calcTask*> calctasks;
+    QPainter *dsizePainter;
+    std::vector<bool> *infm = nullptr;     //pixelmask infinitymap, do Qlist instead?
 
     QColor mBackgroundColor;
     QColor mShapeColor;
     QPen mPen;
 
-    unsigned int mShapeIndex;
+    unsigned int mShapeIndex, mStepCount;
     float mPreScale, mIntervalLength;
-    int *mStepCount=nullptr;
     qint64 mScale=100;    //maybe convert to exponential, longlongint. type is guaranteed 64-bit on all platforms supported by Qt
 
     bool optionCool, mDrawLine;
@@ -168,11 +164,13 @@ private:
 
     void lineDrawer(float step, float tIntervLength, float scale, QPointF center, QPainter &painter);
     void updatePixplotOutput();
-    void setupPixmap(QPixmap *targetmap, float intervalStart, float intervalEnd, calcTask *Thread);
-    void calcTaskDone(){update();}
+    void calcTaskDone(){update(); mTaskdone=true;}
+
+    void startWorker(QSize mapsize);
+    void setupRenderthread(QSize *mapsize, float intervalStart, float intervalEnd, calcTask *calcTask);
 
 
-    //void plotDrawer(QPainter *painter, QPointF startpnt, QPointF step, QSize targetsize,std::vector<bool> *infm, int *mStepCount);
+    //void plotDrawer(QPainter *painter, QPointF startpnt, QPointF step, QSize targetsize,std::vector<bool> *infm, int mStepCount);
 };
 
 #endif // RENDERAREA_H
