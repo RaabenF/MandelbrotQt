@@ -451,7 +451,7 @@ calcTask*  RenderArea::setupRenderthread(QSize *mapsize, float intervalStart, fl
                                      yStartOffset - yInterval/2 /tScale);
 
         calcTask* threadpointer = new calcTask(startpoint, step, *mapsize, mShapeIndex, mStepCount );
-        QThreadPool::globalInstance()->start(threadpointer );        //start() adds thread to queue
+        //QThreadPool::globalInstance()->start(threadpointer );        //start() adds thread to queue, starts while running
         qDebug() << "Active Threads: " << QThreadPool::globalInstance()->activeThreadCount();
         return threadpointer;
     }
@@ -477,7 +477,7 @@ void calcTask::plotDrawer(QPainter *painter, unsigned int ShapeIndex, QPointF st
 
             //when inf is not reached (==0) paint bit-mask black=0
             if(result.x() != 0){
-                //painter->setPen(Qt::black);
+                painter->setPen(Qt::black);
                 //infm->at(pixcounter) = 1;
             }else{
             //iterations of the fractal scaled to color#   //modulo is useless, overflow does the same mostly.
@@ -494,12 +494,12 @@ void calcTask::plotDrawer(QPainter *painter, unsigned int ShapeIndex, QPointF st
                 }
                 QRgb color = qRgb( r, g, b);    //255,R,G,B
 
-                //painter->setPen(color);
+                painter->setPen(color);
                 //infm->at(pixcounter) = 0;
             }
             //always:
             QPointF fpoint(w, h);       //area starts at (0,0)
-            //painter->drawPoint(fpoint);
+            painter->drawPoint(fpoint);
             //infpainter->drawPoint(fpoint);
 
             xrun += step.x();
@@ -551,32 +551,29 @@ calcTask::calcTask(QPointF startpnt, QPointF stepsize, QSize targetsize, unsigne
   ,mShapeIndex(ShapeIndex)
   ,mStepCount(StepCount)
 {
-    QMutexLocker locker(&mutex);
-    delete thrdpainter;
+    //QMutexLocker locker(&mutex);
     //this->parent->mTaskdone=false;      //lock sth
     //we need one painter per thread
     thrdmap = new QPixmap(targetsize);
     thrdpainter = new QPainter(thrdmap);//targetmap);
-    //thrdpainter->setBrush(parent->mBackgroundColor );    //brush defines how shapes are filled
 }
 calcTask::~calcTask(){
-    mutex.lock();
-    //thrdpainter->end();
-    //delete thrdpainter;
+//    mutex.lock();
+//    //thrdpainter->end();
+    delete thrdpainter;
 
-    //condition.wakeOne();    //Wakes one thread waiting on THAT wait condition
-    mutex.unlock();
+//    //condition.wakeOne();    //Wakes one thread waiting on THAT wait condition
+//    mutex.unlock();
 }
 void calcTask::run(){
-    //qDebug() << "Hello world from thread" << QThread::currentThread();
+    qDebug() << "Hello world from thread" << QThread::currentThread();
     //parent->mTaskdone = false;
     this->plotDrawer(thrdpainter,   //only call
                    mShapeIndex,
                    tStartpnt,
                    tStepsize,
                    tTargetsize,
-                   mStepCount);     //startPoint + steps * targetsiz => drawing Interval (the variable mInterval is not used directly)
-    //parent->calcTaskDone(*thrdmap);
+                   mStepCount);
 }
 
 

@@ -10,8 +10,7 @@
 
 
 class calcTask : public QRunnable
-{
-    Q_OBJECT
+{//  Q_OBJECT - runnable is a strange binding class from thread to conccurrent, qobject doesnt seem to work here
 public:
       //parent not optional-> no nullptr
     explicit calcTask(QPointF startpnt, QPointF stepsize, QSize targetsize, unsigned int ShapeIndex, unsigned int mStepCount);//, std::vector<bool> *infm, int *StepCount)
