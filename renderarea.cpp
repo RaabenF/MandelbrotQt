@@ -6,13 +6,11 @@
 #include <QThreadPool>
 #include <QRunnable>
 
-RenderArea::RenderArea(QWidget *parent) :
-    //init list:
-    QWidget(parent)     //is set with mainwindow ui->setupUi() ?
-    ,infm(new std::vector<bool>)
+RenderArea::RenderArea(QWidget *parent) :  QWidget(parent)     //is set with mainwindow ui->setupUi() ?
+    ,infm(new std::vector<bool>)    //init list:
     ,mBackgroundColor(Qt::darkBlue)
     ,mShapeColor(255, 255, 255)
-    , mStepCount((8)),mPreScale(1), mIntervalLength(1), optionCool(false)
+    ,mStepCount((8)),mPreScale(1), mIntervalLength(1), optionCool(false)
 {
 //test, geht nicht wg kein append()
 //    shapetest[0]={     //Qlist(dynamic array) - vom struct
@@ -43,7 +41,6 @@ RenderArea::RenderArea(QWidget *parent) :
 
     paintarea = new QPixmap(this->size() );    //inherits paintdevice
     dsizebuffer = new QPixmap(paintarea->size()*2 );
-    //dsizePainter = new QPainter(dsizebuffer);
 
     mMaxThreads = QThread::idealThreadCount();
     if(mMaxThreads < 2){    // 1==unknown
@@ -64,8 +61,8 @@ RenderArea::RenderArea(QWidget *parent) :
 }
 RenderArea::~RenderArea(){
     //delete dsizePainter;  //delete in this order
-    //delete paintarea;
-    //delete dsizebuffer;
+    delete paintarea;
+    delete dsizebuffer;
 }
 
 QSize RenderArea::minimumSizeHint() const { //recommended minimum size for the widget
@@ -115,7 +112,7 @@ void RenderArea::mouseMoveEvent(QMouseEvent *event){
 void RenderArea::updatePixplotOutput(){
 
     //todo: dispatch partial pixmaps in here:
-    if(false){//!dsizebuffer->isNull() ){//mScale==100)
+    if(true){//!dsizebuffer->isNull() ){//mScale==100)
         //copy=deepcopy of part of pixmap
         int tWidth = dsizebuffer->width(), tHeight = dsizebuffer->height();
         QRect trect = dsizebuffer->rect();
@@ -220,7 +217,7 @@ unsigned int RenderArea::setShape (unsigned int row){
         infm->reserve(this->height()*this->width() );
         mDrawLine = false;
 
-        startWorker(this->size() );
+        startThreads(this->size() );
         //todo: add threads for dsizemap
 
     } else{
@@ -231,11 +228,12 @@ unsigned int RenderArea::setShape (unsigned int row){
     return 0;   //return success
 }
 //only call in setShape so far, with paintarea
-void RenderArea::startWorker(QSize mapsize){
+void RenderArea::startThreads(QSize mapsize){
     //Interval enables calculating fixed-ratio square parts of the whole picture
     //delete threads first...
     //mCalcTasks->clear();
-    while(mThreads < 1){//mMaxThreads){
+    if(mTaskdone)
+    while(mThreads < mMaxThreads){
         float tIntervStart = -mIntervalLength;
         float tIntervEnd = tIntervStart + mIntervalLength*2/mMThrdSqrt;   //mMThrdSqrt == number of threads per one side of the pixmap
         calcTask* tskptr=nullptr;
@@ -243,16 +241,15 @@ void RenderArea::startWorker(QSize mapsize){
         //delete targetpixmap;
         //targetpixmap = new QPixmap(this->size() );    //inherits paintdevice
 
-        if(mTaskdone){
-            tskptr = setupRenderthread(&mapsize, tIntervStart, tIntervEnd);
-            if(tskptr!=nullptr){
-                mCalcTasks.append(tskptr);    //sets up the Thread's Parameters as well
-                QThreadPool::globalInstance()->start(tskptr);
-            }
-            else qDebug() << "thread not found";
+        tskptr = setupRenderthread(&mapsize, tIntervStart, tIntervEnd);
+        if(tskptr!=nullptr){
+            mCalcTasks.append(tskptr);    //sets up the Thread's Parameters as well
+            QThreadPool::globalInstance()->start(tskptr);
         }
+        else qDebug() << "thread not found";
         ++mThreads;
     }
+    qDebug() << "Active Threads: " << QThreadPool::globalInstance()->activeThreadCount();
 }
 
 unsigned int RenderArea::getShapeIDbyName(QString name){
@@ -450,9 +447,8 @@ calcTask*  RenderArea::setupRenderthread(QSize *mapsize, float intervalStart, fl
         QPointF startpoint = QPointF(xStartOffset - xInterval/2 /tScale,
                                      yStartOffset - yInterval/2 /tScale);
 
-        calcTask* threadpointer = new calcTask(startpoint, step, *mapsize, mShapeIndex, mStepCount );
+        calcTask* threadpointer = new calcTask(this, startpoint, step, *mapsize, mShapeIndex, mStepCount );
         //QThreadPool::globalInstance()->start(threadpointer );        //start() adds thread to queue, starts while running
-        qDebug() << "Active Threads: " << QThreadPool::globalInstance()->activeThreadCount();
         return threadpointer;
     }
     return nullptr;
@@ -543,37 +539,42 @@ QPointF calcTask::compute_mandelb(float x,  float y, int StepCount){
     return endv;
 }
 
-calcTask::calcTask(QPointF startpnt, QPointF stepsize, QSize targetsize, unsigned int ShapeIndex, unsigned int StepCount):
-    //, std::vector<bool> *infm, int StepCount)
-   tStartpnt(startpnt)
+calcTask::calcTask(RenderArea *parent, QPointF startpnt, QPointF stepsize, QSize targetsize, unsigned int ShapeIndex, unsigned int StepCount):
+  parent(parent)
+  //, std::vector<bool> *infm, int StepCount)
+  ,tStartpnt(startpnt)
   ,tStepsize(stepsize)
   ,tTargetsize(targetsize)
   ,mShapeIndex(ShapeIndex)
   ,mStepCount(StepCount)
 {
-    //QMutexLocker locker(&mutex);
-    //this->parent->mTaskdone=false;      //lock sth
+    QMutexLocker locker(&mutex);
+    //mutex.lock();
+    this->parent->mTaskdone=false;      //lock sth
+
+    //mutex.unlock();
     //we need one painter per thread
     thrdmap = new QPixmap(targetsize);
     thrdpainter = new QPainter(thrdmap);//targetmap);
 }
+
 calcTask::~calcTask(){
-//    mutex.lock();
+    mutex.lock();
 //    //thrdpainter->end();
     delete thrdpainter;
-
 //    //condition.wakeOne();    //Wakes one thread waiting on THAT wait condition
-//    mutex.unlock();
+    mutex.unlock();
 }
+
 void calcTask::run(){
     qDebug() << "Hello world from thread" << QThread::currentThread();
-    //parent->mTaskdone = false;
     this->plotDrawer(thrdpainter,   //only call
                    mShapeIndex,
                    tStartpnt,
                    tStepsize,
                    tTargetsize,
                    mStepCount);
+    this->parent->calcTaskDone(*thrdmap);
 }
 
 

@@ -9,11 +9,13 @@
 #include <QMutex>
 
 
+class RenderArea;
+
 class calcTask : public QRunnable
-{//  Q_OBJECT - runnable is a strange binding class from thread to conccurrent, qobject doesnt seem to work here
+{//  Q_OBJECT - runnable is a strange glue class from thread to conccurrent, qobject doesnt seem to work here
 public:
       //parent not optional-> no nullptr
-    explicit calcTask(QPointF startpnt, QPointF stepsize, QSize targetsize, unsigned int ShapeIndex, unsigned int mStepCount);//, std::vector<bool> *infm, int *StepCount)
+    explicit calcTask(RenderArea *parent, QPointF startpnt, QPointF stepsize, QSize targetsize, unsigned int ShapeIndex, unsigned int mStepCount);//, std::vector<bool> *infm, int *StepCount)
     ~calcTask();
 
     void run() override;    //arguments must stay blank for override, therefore parameters are stored as members
@@ -23,6 +25,7 @@ public:
 protected:
 
 private:
+    RenderArea *parent;
     QMutex mutex;
 
     QPixmap *thrdmap;
@@ -49,7 +52,7 @@ private:
 class RenderArea : public QWidget   //RenderArea ist ein Objekt in UI
 {
     Q_OBJECT
-    //friend class calcTask;
+    friend class calcTask;
 
 public:
     explicit RenderArea(QWidget *parent = nullptr);
@@ -160,12 +163,13 @@ private:
     void lineDrawer(float step, float tIntervLength, float scale, QPointF center, QPainter &painter);
     void updatePixplotOutput();
     void calcTaskDone(QPixmap resultmap){
-        *paintarea = resultmap;
+        *dsizebuffer = resultmap;
         mTaskdone=true;
+        updatePixplotOutput();
         update();
     }
 
-    void startWorker(QSize mapsize);
+    void startThreads(QSize mapsize);
     calcTask* setupRenderthread(QSize *mapsize, float intervalStart, float intervalEnd);
 
 
