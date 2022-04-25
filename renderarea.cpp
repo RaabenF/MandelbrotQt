@@ -12,7 +12,7 @@ RenderArea::RenderArea(QWidget *parent) :
     ,infm(new std::vector<bool>)
     ,mBackgroundColor(Qt::darkBlue)
     ,mShapeColor(255, 255, 255)
-    ,mPreScale(1), mIntervalLength(1), mStepCount((8)), optionCool(false)
+    , mStepCount((8)),mPreScale(1), mIntervalLength(1), optionCool(false)
 {
 //test, geht nicht wg kein append()
 //    shapetest[0]={     //Qlist(dynamic array) - vom struct
@@ -43,7 +43,7 @@ RenderArea::RenderArea(QWidget *parent) :
 
     paintarea = new QPixmap(this->size() );    //inherits paintdevice
     dsizebuffer = new QPixmap(paintarea->size()*2 );
-    dsizePainter = new QPainter(dsizebuffer);
+    //dsizePainter = new QPainter(dsizebuffer);
 
     mMaxThreads = QThread::idealThreadCount();
     if(mMaxThreads < 2){    // 1==unknown
@@ -55,7 +55,7 @@ RenderArea::RenderArea(QWidget *parent) :
     mMaxThreads = mMThrdSqrt * mMThrdSqrt;
     QThreadPool::globalInstance()->setMaxThreadCount(mMaxThreads);
 
-    QThreadPool::globalInstance()->setExpiryTimeout(-1);  //negative=dont destroy new threads
+    //QThreadPool::globalInstance()->setExpiryTimeout(-1);  //negative=dont destroy new threads
 //    for(unsigned int i=0; i<mMaxThreads; i++){
 //        QThreadPool::globalInstance()->reserveThread();     //not neccesary?
 //    }
@@ -63,9 +63,9 @@ RenderArea::RenderArea(QWidget *parent) :
     qDebug()<<"initialization of Render Area done";
 }
 RenderArea::~RenderArea(){
-    delete dsizePainter;  //delete in this order
-    delete paintarea;
-    delete dsizebuffer;
+    //delete dsizePainter;  //delete in this order
+    //delete paintarea;
+    //delete dsizebuffer;
 }
 
 QSize RenderArea::minimumSizeHint() const { //recommended minimum size for the widget
@@ -79,12 +79,10 @@ QSize RenderArea::sizeHint() const {        //return the preferred size of this 
 void RenderArea::resizeEvent(QResizeEvent *event){
     //called before paintEvent  |   event->oldSize();
     if(!mDrawLine){
-        delete dsizePainter;  //delete in this order
         delete paintarea;
         delete dsizebuffer;
         paintarea = new QPixmap(event->size() );
         dsizebuffer = new QPixmap(paintarea->size()*2 );
-        dsizePainter = new QPainter(dsizebuffer);
         updatePixplotOutput();
     }
 
@@ -117,7 +115,7 @@ void RenderArea::mouseMoveEvent(QMouseEvent *event){
 void RenderArea::updatePixplotOutput(){
 
     //todo: dispatch partial pixmaps in here:
-    if(false){//mScale==100)
+    if(false){//!dsizebuffer->isNull() ){//mScale==100)
         //copy=deepcopy of part of pixmap
         int tWidth = dsizebuffer->width(), tHeight = dsizebuffer->height();
         QRect trect = dsizebuffer->rect();
@@ -246,8 +244,11 @@ void RenderArea::startWorker(QSize mapsize){
         //targetpixmap = new QPixmap(this->size() );    //inherits paintdevice
 
         if(mTaskdone){
-            setupRenderthread(&mapsize, tIntervStart, tIntervEnd,  tskptr);
-            if(tskptr)mCalcTasks->append(tskptr);    //sets up the Thread's Parameters as well
+            tskptr = setupRenderthread(&mapsize, tIntervStart, tIntervEnd);
+            if(tskptr!=nullptr){
+                mCalcTasks.append(tskptr);    //sets up the Thread's Parameters as well
+                QThreadPool::globalInstance()->start(tskptr);
+            }
             else qDebug() << "thread not found";
         }
         ++mThreads;
@@ -415,7 +416,7 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
 
 
 //Interval enables calculating fixed-ratio square parts of the whole picture
-void RenderArea::setupRenderthread(QSize *mapsize, float intervalStart, float intervalEnd, calcTask *threadpointer){
+calcTask*  RenderArea::setupRenderthread(QSize *mapsize, float intervalStart, float intervalEnd){
     if(mShapeIndex >= getShapeIDbyName("mandel brot") ){
         int tWidth = mapsize->width(), tHeight = mapsize->height();
 //        int tWidth = this->width();
@@ -449,14 +450,16 @@ void RenderArea::setupRenderthread(QSize *mapsize, float intervalStart, float in
         QPointF startpoint = QPointF(xStartOffset - xInterval/2 /tScale,
                                      yStartOffset - yInterval/2 /tScale);
 
-        threadpointer = new calcTask(this, startpoint, step, *mapsize );
+        calcTask* threadpointer = new calcTask(startpoint, step, *mapsize, mShapeIndex, mStepCount );
         QThreadPool::globalInstance()->start(threadpointer );        //start() adds thread to queue
         qDebug() << "Active Threads: " << QThreadPool::globalInstance()->activeThreadCount();
+        return threadpointer;
     }
+    return nullptr;
 }
 
 //plotts the given startPoint + steps*targetsize to a Paintdevice, which is tied to a thread:
-void calcTask::plotDrawer(QPainter *painter, unsigned int ShapeIndex, QPointF startpnt, QPointF step,  QSize targetsize, std::vector<bool> *infm, int StepCount){
+void calcTask::plotDrawer(QPainter *painter, unsigned int ShapeIndex, QPointF startpnt, QPointF step,  QSize targetsize, int StepCount){
     int pixwidth = targetsize.width(), pixheight = targetsize.height();
     float ystart = startpnt.y();
     int pixcounter=0;
@@ -475,7 +478,7 @@ void calcTask::plotDrawer(QPainter *painter, unsigned int ShapeIndex, QPointF st
             //when inf is not reached (==0) paint bit-mask black=0
             if(result.x() != 0){
                 //painter->setPen(Qt::black);
-                infm->at(pixcounter) = 1;
+                //infm->at(pixcounter) = 1;
             }else{
             //iterations of the fractal scaled to color#   //modulo is useless, overflow does the same mostly.
             // use two complement colors is best. more iterations then advance contrast and detail
@@ -492,7 +495,7 @@ void calcTask::plotDrawer(QPainter *painter, unsigned int ShapeIndex, QPointF st
                 QRgb color = qRgb( r, g, b);    //255,R,G,B
 
                 //painter->setPen(color);
-                infm->at(pixcounter) = 0;
+                //infm->at(pixcounter) = 0;
             }
             //always:
             QPointF fpoint(w, h);       //area starts at (0,0)
@@ -515,7 +518,7 @@ QPointF calcTask::compute2(float x, float y, int StepCount, unsigned int ShapeIn
         return calcTask::compute_mandelb(x, y, StepCount);
         break;
     default:
-        return  RenderArea::compute_line(x);
+        //return  RenderArea::compute_line(x);
         break;
     }
     return QPointF(0,0);
@@ -540,42 +543,40 @@ QPointF calcTask::compute_mandelb(float x,  float y, int StepCount){
     return endv;
 }
 
-
-
-
-
-calcTask::calcTask(RenderArea *parent, QPointF startpnt, QPointF stepsize, QSize targetsize):
+calcTask::calcTask(QPointF startpnt, QPointF stepsize, QSize targetsize, unsigned int ShapeIndex, unsigned int StepCount):
     //, std::vector<bool> *infm, int StepCount)
-    parent(parent)
+   tStartpnt(startpnt)
+  ,tStepsize(stepsize)
+  ,tTargetsize(targetsize)
+  ,mShapeIndex(ShapeIndex)
+  ,mStepCount(StepCount)
 {
-    this->parent->mTaskdone=false;      //lock sth
-    this->tThreadParams->thread = this;
-    this->tThreadParams->startpnt = startpnt;
-    this->tThreadParams->stepsize = stepsize;
-    this->tThreadParams->targetsize = targetsize;
+    QMutexLocker locker(&mutex);
+    delete thrdpainter;
+    //this->parent->mTaskdone=false;      //lock sth
     //we need one painter per thread
     thrdmap = new QPixmap(targetsize);
     thrdpainter = new QPainter(thrdmap);//targetmap);
-    thrdpainter->setBrush(parent->mBackgroundColor );    //brush defines how shapes are filled
+    //thrdpainter->setBrush(parent->mBackgroundColor );    //brush defines how shapes are filled
 }
 calcTask::~calcTask(){
-    delete parent;
+    mutex.lock();
     //thrdpainter->end();
-    delete thrdpainter;
-    delete tThreadParams;
-}
+    //delete thrdpainter;
 
+    //condition.wakeOne();    //Wakes one thread waiting on THAT wait condition
+    mutex.unlock();
+}
 void calcTask::run(){
     //qDebug() << "Hello world from thread" << QThread::currentThread();
-    parent->mTaskdone = false;
+    //parent->mTaskdone = false;
     this->plotDrawer(thrdpainter,   //only call
-                   parent->mShapeIndex,
-                   this->tThreadParams->startpnt,
-                   this->tThreadParams->stepsize,
-                   this->tThreadParams->targetsize,
-                   parent->infm,
-                   parent->mStepCount);     //startPoint + steps * targetsiz => drawing Interval (the variable mInterval is not used directly)
-    parent->calcTaskDone();
+                   mShapeIndex,
+                   tStartpnt,
+                   tStepsize,
+                   tTargetsize,
+                   mStepCount);     //startPoint + steps * targetsiz => drawing Interval (the variable mInterval is not used directly)
+    //parent->calcTaskDone(*thrdmap);
 }
 
 
