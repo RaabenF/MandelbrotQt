@@ -44,12 +44,13 @@ RenderArea::RenderArea(QWidget *parent) :  QWidget(parent)     //is set with mai
 
     mMaxThreads = QThread::idealThreadCount();
     if(mMaxThreads < 2){    // 1==unknown
-        QThreadPool::globalInstance()->setMaxThreadCount(4);    //try 4 or 1 threads?
+        QThreadPool::globalInstance()->setMaxThreadCount(4);    //try 4 or 2 or 1 threads?
         qDebug()<< "Optimum Number of Threads could not be detected";
     }
     qDebug()<<"Optimum Threadnumber on your machine is: " << mMaxThreads;
-    mMThrdSqrt = (unsigned int)std::sqrt(mMaxThreads);
+    mMThrdSqrt = (unsigned int)std::sqrt(mMaxThreads);      //eg sqrt(6)=>2
     mMaxThreads = mMThrdSqrt * mMThrdSqrt;
+    mMaxThreads=1;
     QThreadPool::globalInstance()->setMaxThreadCount(mMaxThreads);
 
     //QThreadPool::globalInstance()->setExpiryTimeout(-1);  //negative=dont destroy new threads
@@ -66,11 +67,11 @@ RenderArea::~RenderArea(){
 }
 
 QSize RenderArea::minimumSizeHint() const { //recommended minimum size for the widget
-    return QSize(400,300);
+    return QSize(320,240);
 }
 
 QSize RenderArea::sizeHint() const {        //return the preferred size of this item.
-    return QSize(400,400);
+    return QSize(640,480);
 }
 
 void RenderArea::resizeEvent(QResizeEvent *event){
@@ -106,24 +107,6 @@ void RenderArea::mouseMoveEvent(QMouseEvent *event){
     }
     mMousePos = event->pos();    //rel to widget or: globalPosition();
     event->accept();
-}
-
-//is called on (resize), mouse events (move, zoom), or value changes:
-void RenderArea::updatePixplotOutput(){
-
-    //todo: dispatch partial pixmaps in here:
-    if(true){//!dsizebuffer->isNull() ){//mScale==100)
-        //copy=deepcopy of part of pixmap
-        int tWidth = dsizebuffer->width(), tHeight = dsizebuffer->height();
-        QRect trect = dsizebuffer->rect();
-        //set start of rect, changes size
-        trect.setX(tWidth/4);
-        trect.setY(tHeight/4);
-        trect.setSize(paintarea->size() );
-        *paintarea = dsizebuffer->copy(trect );
-        //*paintarea = dsizebuffer->scaled(,Qt::KeepAspectRatioByExpanding,Qt::SmoothTransformation);
-        //*paintarea = dsizebuffer->scaled(this->size(),Qt::KeepAspectRatioByExpanding,Qt::SmoothTransformation);
-    }
 }
 
 void RenderArea::mouseReleaseEvent(QMouseEvent *event){
@@ -166,6 +149,25 @@ void RenderArea::zoom(int steps){
     }
     emit this->valueChanged();  //mainwindow updates ui then
     update();
+}
+
+//is called on (resize), mouse events (move, zoom), or value changes:
+void RenderArea::updatePixplotOutput(){
+
+    //todo: dispatch partial pixmaps in here:
+    if(false){//!dsizebuffer->isNull() ){//mScale==100)
+        //copy=deepcopy of part of pixmap
+        int tWidth = dsizebuffer->width(), tHeight = dsizebuffer->height();
+        QRect trect = dsizebuffer->rect();
+        //set start of rect, changes size
+        trect.setX(tWidth/4);
+        trect.setY(tHeight/4);
+        trect.setSize(paintarea->size() );
+        *paintarea = dsizebuffer->copy(trect );
+        //*paintarea = dsizebuffer->scaled(this->size(),Qt::KeepAspectRatioByExpanding,Qt::SmoothTransformation);
+    }else{
+        *paintarea = dsizebuffer->scaled(this->size(),Qt::KeepAspectRatioByExpanding,Qt::SmoothTransformation);
+    }
 }
 
 RenderArea::ShapeType RenderArea::setShapeparameteres(unsigned int id, QString name, float preScale, float interval, int steps, float Xoffset, float Yoffset ){
@@ -212,15 +214,17 @@ unsigned int RenderArea::setShape (unsigned int row){
         qDebug() << "shapelist index out of range, no menu";
         return shapestore.length();                             //return failure
     }
-    //init plotter specific stuff
+    //init plotter specific stuff - start painting per pixel mode
     if(mShapeIndex >= getShapeIDbyName("mandel brot") ){
         infm->reserve(this->height()*this->width() );
         mDrawLine = false;
 
-        startThreads(this->size() );
-        //todo: add threads for dsizemap
-
-    } else{
+        QSize tsize = this->dsizebuffer->size();// paintarea->size();
+        if(mWindowstartet)startThreads(tsize );
+        else{ startThreads(tsize );
+            mWindowstartet = true;
+        }
+    }else{     //start drawing mode
         infm->clear();
         mDrawLine = true;
     }
@@ -229,17 +233,25 @@ unsigned int RenderArea::setShape (unsigned int row){
 }
 //only call in setShape so far, with paintarea
 void RenderArea::startThreads(QSize mapsize){
-    //Interval enables calculating fixed-ratio square parts of the whole picture
-    //delete threads first...
-    //mCalcTasks->clear();
+    //delete threads first
+    if( QThreadPool::globalInstance()->activeThreadCount() == 0){
+        mThreads = 0;
+        mCalcTasks.clear();
+    }else{
+        QThreadPool::globalInstance()->clear();//only if autodelete
+        //2nd and last try:
+        if( QThreadPool::globalInstance()->activeThreadCount() == 0){
+            mThreads = 0;
+            mCalcTasks.clear();
+            qDebug() << "could not delete all threads";
+        }
+    }
     if(mTaskdone)
     while(mThreads < mMaxThreads){
+        //Interval enables calculating fixed-ratio square parts of the whole picture
         float tIntervStart = -mIntervalLength;
         float tIntervEnd = tIntervStart + mIntervalLength*2/mMThrdSqrt;   //mMThrdSqrt == number of threads per one side of the pixmap
         calcTask* tskptr=nullptr;
-
-        //delete targetpixmap;
-        //targetpixmap = new QPixmap(this->size() );    //inherits paintdevice
 
         tskptr = setupRenderthread(&mapsize, tIntervStart, tIntervEnd);
         if(tskptr!=nullptr){
@@ -259,6 +271,98 @@ unsigned int RenderArea::getShapeIDbyName(QString name){
         }
     }
     return 0;   //else return standartvalue
+}
+
+void RenderArea::calcTaskDone(QPixmap resultmap){
+    *dsizebuffer = resultmap;
+    //*paintarea = dsizebuffer->copy(trect );
+    *paintarea = dsizebuffer->scaled(this->size(),Qt::KeepAspectRatioByExpanding,Qt::SmoothTransformation);
+    mTaskdone=true;
+    updatePixplotOutput();
+    update();
+}
+//Interval enables calculating fixed-ratio square parts of the whole picture
+calcTask*  RenderArea::setupRenderthread(QSize *mapsize, float intervalStart, float intervalEnd){
+    if(mShapeIndex >= getShapeIDbyName("mandel brot") ){
+        int tWidth = mapsize->width(), tHeight = mapsize->height();
+        infm->resize(tWidth*tHeight);
+
+        const float xInterval = (intervalEnd - intervalStart)/2;
+        const float yInterval = xInterval * tHeight/tWidth;
+        float tScale = mPreScale * mScale/100;      //preSc is set per Shape, mScale-slider:0..100..1000  => 0..1..10 *mPreScale mandel=1..100
+
+        int tXoffset = shapestore[this->mShapeIndex].Xoffset;// + mMove.x();   //lifetime of mouse-move is reset with setShape(), works well
+        int tYoffset = shapestore[this->mShapeIndex].Yoffset;
+
+        const QPointF step = QPointF(xInterval/tWidth / tScale,  // *step scales a pix value to Interval-Units
+                                     yInterval/tHeight / tScale);    //bigger scale -> smaller steps
+
+        const float tInitScale = mPreScale * 100/100;      //preSc is set per Shape, mScale-slider:0..100..1000  => 0..1..10 *mPreScale mandel=1..100
+        // 1. set the offset from shapestore for the point-of-view at beginning
+        float xStartOffset = xInterval/tWidth /tInitScale * tXoffset;   //viewport offset at init scale (1) =initStep*offset   -> 100px=-2/3  relative to 0,0
+        float yStartOffset = yInterval/tHeight /tInitScale * tYoffset;
+
+        // 2. this 2nd offset is added to the point-of-view, the step component represents the actual scale which is added in permanently
+        mXoffset += (mtMouseMove.x() * step.x() );
+        mYoffset += (mtMouseMove.y() * step.y() );
+        mtMouseMove = QPoint(0,0);  //move recieved
+
+        yStartOffset += mYoffset;
+        xStartOffset += mXoffset;
+
+        // 3. add the remaining half of the area-in-sight to the offsets, that equates to the final starting point
+        QPointF startpnt = QPointF(xStartOffset - xInterval/2 /tScale,
+                                     yStartOffset - yInterval/2 /tScale);
+        calcTask* threadpointer=nullptr;
+        if(false){//start thread
+            threadpointer = new calcTask(this, startpnt, step, *mapsize, mShapeIndex, mStepCount );
+            QThreadPool::globalInstance()->start(threadpointer );        //start() adds thread to queue, starts while running
+        }else{//for DEBUG:
+            QPainter *dspaint = new QPainter(dsizebuffer);
+            calcTask::plotDrawer(dspaint, mShapeIndex, startpnt,step,dsizebuffer->size(),mStepCount );
+            this->calcTaskDone(*dsizebuffer);
+            delete dspaint;
+        }
+        return threadpointer;
+    }
+    return nullptr;
+}
+
+void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wenn nötig, protected+override im .h
+{
+    Q_UNUSED(event);        //deaktiviert Kompilerwarnung
+
+    QPainter rAreaPainter(this);
+    rAreaPainter.setBrush(mBackgroundColor );    //brush defines how shapes are filled
+
+    //setShape(foo);    //verboten!!! calls repaint()-> rekursiv
+    //std::complex<double> *complVal = new std::complex<double>(1,1);      //include <complex>
+
+    if (mDrawLine){
+        //drawing area:
+        rAreaPainter.drawRect(this->rect() );
+        QPointF center = this->rect().center();     // war im tut kein floatP, ist aber egal, konvertierung erfolgt auch automatisch
+        float step = mIntervalLength / mStepCount;
+        float tIntervLength = mIntervalLength + step;
+        float tScale = mPreScale * mScale/100;      //preSc is set per Shape, mScale-slider:0..100..1000  => 0..1..10 *mPreScale mandel=1..100
+
+        rAreaPainter.setRenderHint(QPainter::Antialiasing, true);
+        lineDrawer(step, tIntervLength, tScale, center, rAreaPainter);
+    }
+    else{       //start plot drawing process
+        rAreaPainter.setRenderHint(QPainter::Antialiasing, false);
+        rAreaPainter.setRenderHint(QPainter::TextAntialiasing, false);
+        rAreaPainter.setRenderHint(QPainter::SmoothPixmapTransform, false);
+        rAreaPainter.setRenderHint(QPainter::VerticalSubpixelPositioning, false);
+        rAreaPainter.setRenderHint(QPainter::LosslessImageRendering, false);
+        rAreaPainter.setPen(Qt::black);
+
+        //draw paintarea buffer to screen:
+        rAreaPainter.drawPixmap(this->rect(), *paintarea, paintarea->rect() );
+        if(! (this->rect()==paintarea->rect()) )qDebug() << "wrong pixmap size";
+    }
+    //durchläufe for() interval(256*2)+0+anfang+ende; 515
+    //GESAMT DURCHLÄUFE 5, evtl wegen oversampling? -> ohne antialiasing 4
 }
 
 
@@ -374,85 +478,11 @@ void RenderArea::lineDrawer(float step, float tIntervLength, float tScale, QPoin
 }
 
 
-void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wenn nötig, protected+override im .h
-{
-    Q_UNUSED(event);        //deaktiviert Kompilerwarnung
-
-    QPainter rAreaPainter(this);
-    rAreaPainter.setBrush(mBackgroundColor );    //brush defines how shapes are filled
-
-    //setShape(foo);    //verboten!!! calls repaint()-> rekursiv
-    //std::complex<double> *complVal = new std::complex<double>(1,1);      //include <complex>
-
-    if (mDrawLine){
-        //drawing area:
-        rAreaPainter.drawRect(this->rect() );
-        QPointF center = this->rect().center();     // war im tut kein floatP, ist aber egal, konvertierung erfolgt auch automatisch
-        float step = mIntervalLength / mStepCount;
-        float tIntervLength = mIntervalLength + step;
-        float tScale = mPreScale * mScale/100;      //preSc is set per Shape, mScale-slider:0..100..1000  => 0..1..10 *mPreScale mandel=1..100
-
-        rAreaPainter.setRenderHint(QPainter::Antialiasing, true);
-        lineDrawer(step, tIntervLength, tScale, center, rAreaPainter);
-    }
-    else{       //start plot drawing process
-        rAreaPainter.setRenderHint(QPainter::Antialiasing, false);
-        rAreaPainter.setRenderHint(QPainter::TextAntialiasing, false);
-        rAreaPainter.setRenderHint(QPainter::SmoothPixmapTransform, false);
-        rAreaPainter.setRenderHint(QPainter::VerticalSubpixelPositioning, false);
-        rAreaPainter.setRenderHint(QPainter::LosslessImageRendering, false);
-        rAreaPainter.setPen(Qt::black);
-
-        //draw paintarea buffer to screen:
-        rAreaPainter.drawPixmap(this->rect(), *paintarea, paintarea->rect() );
-        if(! (this->rect()==paintarea->rect()) )qDebug() << "wrong pixmap size";
-    }
-    //durchläufe for() interval(256*2)+0+anfang+ende; 515
-    //GESAMT DURCHLÄUFE 5, evtl wegen oversampling? -> ohne antialiasing 4
-}
 
 
-//Interval enables calculating fixed-ratio square parts of the whole picture
-calcTask*  RenderArea::setupRenderthread(QSize *mapsize, float intervalStart, float intervalEnd){
-    if(mShapeIndex >= getShapeIDbyName("mandel brot") ){
-        int tWidth = mapsize->width(), tHeight = mapsize->height();
-//        int tWidth = this->width();
-//        int tHeight = this->height();
-        infm->resize(tWidth*tHeight);
 
-        const float xInterval = (intervalEnd - intervalStart)/2;
-        const float yInterval = xInterval * tHeight/tWidth;
-        float tScale = mPreScale * mScale/100;      //preSc is set per Shape, mScale-slider:0..100..1000  => 0..1..10 *mPreScale mandel=1..100
 
-        int tXoffset = shapestore[this->mShapeIndex].Xoffset;// + mMove.x();   //lifetime of mouse-move is reset with setShape(), works well
-        int tYoffset = shapestore[this->mShapeIndex].Yoffset;
 
-        const QPointF step = QPointF(xInterval/tWidth / tScale,  // *step scales a pix value to Interval-Units
-                                     yInterval/tHeight / tScale);    //bigger scale -> smaller steps
-
-        const float tInitScale = mPreScale * 100/100;      //preSc is set per Shape, mScale-slider:0..100..1000  => 0..1..10 *mPreScale mandel=1..100
-        // 1. set the offset from shapestore for the point-of-view at beginning
-        float xStartOffset = xInterval/tWidth /tInitScale * tXoffset;   //viewport offset at init scale (1) =initStep*offset   -> 100px=-2/3  relative to 0,0
-        float yStartOffset = yInterval/tHeight /tInitScale * tYoffset;
-
-        // 2. this 2nd offset is added to the point-of-view, the step component represents the actual scale which is added in permanently
-        mXoffset += (mtMouseMove.x() * step.x() );
-        mYoffset += (mtMouseMove.y() * step.y() );
-        mtMouseMove = QPoint(0,0);  //move recieved
-
-        yStartOffset += mYoffset;
-        xStartOffset += mXoffset;
-
-        // 3. add the remaining half of the area-in-sight to the offsets, that equates to the final starting point
-        QPointF startpoint = QPointF(xStartOffset - xInterval/2 /tScale,
-                                     yStartOffset - yInterval/2 /tScale);
-
-        calcTask* threadpointer = new calcTask(this, startpoint, step, *mapsize, mShapeIndex, mStepCount );
-        //QThreadPool::globalInstance()->start(threadpointer );        //start() adds thread to queue, starts while running
-        return threadpointer;
-    }
-    return nullptr;
-}
 
 //plotts the given startPoint + steps*targetsize to a Paintdevice, which is tied to a thread:
 void calcTask::plotDrawer(QPainter *painter, unsigned int ShapeIndex, QPointF startpnt, QPointF step,  QSize targetsize, int StepCount){

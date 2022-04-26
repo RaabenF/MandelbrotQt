@@ -13,6 +13,7 @@ class RenderArea;
 
 class calcTask : public QRunnable
 {//  Q_OBJECT - runnable is a strange glue class from thread to conccurrent, qobject doesnt seem to work here
+    friend class RenderArea;
 public:
       //parent not optional-> no nullptr
     explicit calcTask(RenderArea *parent, QPointF startpnt, QPointF stepsize, QSize targetsize, unsigned int ShapeIndex, unsigned int mStepCount);//, std::vector<bool> *infm, int *StepCount)
@@ -43,7 +44,7 @@ private:
 
     static QPointF compute2(float x,  float y, int StepCount, unsigned int ShapeIndex);           //dispatcher based on type
     static QPointF compute_mandelb(float x,  float y, int StepCount);
-    void plotDrawer(QPainter *painter, unsigned int ShapeIndex, QPointF startpnt, QPointF step, QSize targetsize, int StepCount);
+    static void plotDrawer(QPainter *painter, unsigned int ShapeIndex, QPointF startpnt, QPointF step, QSize targetsize, int StepCount);
 
 };
 
@@ -128,7 +129,7 @@ signals:
 
 private:
     QList<calcTask*> mCalcTasks;
-    bool mTaskdone=true;
+    bool mTaskdone=true, mWindowstartet = false;
     unsigned int mMaxThreads = 1, mMThrdSqrt = 0, mThreads = 0;
     QList<ShapeType> shapestore;     //dynamische Qliste des structs, kann wie c array verwendet werden
     QPixmap *paintarea, *dsizebuffer;
@@ -162,12 +163,7 @@ private:
 
     void lineDrawer(float step, float tIntervLength, float scale, QPointF center, QPainter &painter);
     void updatePixplotOutput();
-    void calcTaskDone(QPixmap resultmap){
-        *dsizebuffer = resultmap;
-        mTaskdone=true;
-        updatePixplotOutput();
-        update();
-    }
+    void calcTaskDone(QPixmap resultmap);
 
     void startThreads(QSize mapsize);
     calcTask* setupRenderthread(QSize *mapsize, float intervalStart, float intervalEnd);
