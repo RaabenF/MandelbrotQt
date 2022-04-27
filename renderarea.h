@@ -129,10 +129,10 @@ signals:
 
 private:
     QList<calcTask*> mCalcTasks;
-    bool mTaskdone=true, mWindowstartet = false;
+    bool mTaskdone=true, mWindowstarted = false;
     unsigned int mMaxThreads = 1, mMThrdSqrt = 0, mThreads = 0;
     QList<ShapeType> shapestore;     //dynamische Qliste des structs, kann wie c array verwendet werden
-    QPixmap *paintarea, *dsizebuffer;
+    QPixmap *paintarea, *dsizebuffer, *dsbufferold;
     std::vector<bool> *infm = nullptr;     //pixelmask infinitymap, do Qlist instead?
 
     QColor mBackgroundColor;
@@ -164,6 +164,7 @@ private:
     void lineDrawer(float step, float tIntervLength, float scale, QPointF center, QPainter &painter);
     void updatePixplotOutput();
     void calcTaskDone(QPixmap resultmap);
+    void calcTaskDone(QPixmap *resultmap);
 
     void startThreads(QSize mapsize);
     calcTask* setupRenderthread(QSize *mapsize, float intervalStart, float intervalEnd);

@@ -41,6 +41,7 @@ RenderArea::RenderArea(QWidget *parent) :  QWidget(parent)     //is set with mai
 
     paintarea = new QPixmap(this->size() );    //inherits paintdevice
     dsizebuffer = new QPixmap(paintarea->size()*2 );
+    dsbufferold = new QPixmap();
 
     mMaxThreads = QThread::idealThreadCount();
     if(mMaxThreads < 2){    // 1==unknown
@@ -78,12 +79,14 @@ void RenderArea::resizeEvent(QResizeEvent *event){
     //called before paintEvent  |   event->oldSize();
     if(!mDrawLine){
         delete paintarea;
-        delete dsizebuffer;
-        paintarea = new QPixmap(event->size() );
+        delete dsbufferold;
+        dsbufferold=dsizebuffer;
+        //delete dsizebuffer;
+        paintarea = new QPixmap(event->size() );    //2nd time 452x345
         dsizebuffer = new QPixmap(paintarea->size()*2 );
+        *dsizebuffer=*dsbufferold;//->scaled(dsizebuffer->size(),Qt::IgnoreAspectRatio,Qt::SmoothTransformation);
         updatePixplotOutput();
     }
-
     event->accept();
 }
 
@@ -151,7 +154,7 @@ void RenderArea::zoom(int steps){
     update();
 }
 
-//is called on (resize), mouse events (move, zoom), or value changes:
+//is called on calcTaskDone, (resize), mouse events (move, zoom), or value changes:
 void RenderArea::updatePixplotOutput(){
 
     //todo: dispatch partial pixmaps in here:
@@ -164,31 +167,11 @@ void RenderArea::updatePixplotOutput(){
         trect.setY(tHeight/4);
         trect.setSize(paintarea->size() );
         *paintarea = dsizebuffer->copy(trect );
-        //*paintarea = dsizebuffer->scaled(this->size(),Qt::KeepAspectRatioByExpanding,Qt::SmoothTransformation);
+        //*paintarea = dsizebuffer->scaled(this->size(),Qt::IgnoreAspectRatio,Qt::SmoothTransformation);
     }else{
-        *paintarea = dsizebuffer->scaled(this->size(),Qt::KeepAspectRatioByExpanding,Qt::SmoothTransformation);
+        *paintarea = dsizebuffer->scaled(this->size(),Qt::IgnoreAspectRatio,Qt::SmoothTransformation); //Expanding resizes target
     }
 }
-
-RenderArea::ShapeType RenderArea::setShapeparameteres(unsigned int id, QString name, float preScale, float interval, int steps, float Xoffset, float Yoffset ){
-    ShapeType sdata = {     //Qlist(dynamic array) - vom struct
-         .id=id,
-         .name=name,            //, calculation name;
-         .prescale=preScale,
-         .interval=interval,    //Length; //8, M_PI;
-         .steps=steps,           //Count;
-         .Xoffset=Xoffset,
-         .Yoffset=Yoffset
-    };
-    ShapeList.append(name);
-    return sdata;
-}
-//    default:                                                //wichtig, default sollte immer gemacht werden
-//        mPreScale = 80;
-//        mIntervalLength = M_PI; //2 * M_PI;
-//        mStepCount = 256;
-//        setBackgroundColor(QColorConstants::DarkYellow);
-//        break;
 
 unsigned int RenderArea::setShape (unsigned int row){
     if (shapestore.length() > row ){    //length starts@ 1, row @ 0
@@ -220,9 +203,9 @@ unsigned int RenderArea::setShape (unsigned int row){
         mDrawLine = false;
 
         QSize tsize = this->dsizebuffer->size();// paintarea->size();
-        if(mWindowstartet)startThreads(tsize );
+        if(mWindowstarted)startThreads(tsize );
         else{ startThreads(tsize );
-            mWindowstartet = true;
+            mWindowstarted = true;
         }
     }else{     //start drawing mode
         infm->clear();
@@ -250,13 +233,13 @@ void RenderArea::startThreads(QSize mapsize){
     while(mThreads < mMaxThreads){
         //Interval enables calculating fixed-ratio square parts of the whole picture
         float tIntervStart = -mIntervalLength;
-        float tIntervEnd = tIntervStart + mIntervalLength*2/mMThrdSqrt;   //mMThrdSqrt == number of threads per one side of the pixmap
+        float tIntervEnd = mIntervalLength;//tIntervStart + mIntervalLength*2/mMThrdSqrt;   //mMThrdSqrt == number of threads per one side of the pixmap
         calcTask* tskptr=nullptr;
 
         tskptr = setupRenderthread(&mapsize, tIntervStart, tIntervEnd);
         if(tskptr!=nullptr){
             mCalcTasks.append(tskptr);    //sets up the Thread's Parameters as well
-            QThreadPool::globalInstance()->start(tskptr);
+            //QThreadPool::globalInstance()->start(tskptr);
         }
         else qDebug() << "thread not found";
         ++mThreads;
@@ -273,14 +256,15 @@ unsigned int RenderArea::getShapeIDbyName(QString name){
     return 0;   //else return standartvalue
 }
 
-void RenderArea::calcTaskDone(QPixmap resultmap){
-    *dsizebuffer = resultmap;
+void RenderArea::calcTaskDone(QPixmap *resultmap){
+    //*dsizebuffer = resultmap;
     //*paintarea = dsizebuffer->copy(trect );
-    *paintarea = dsizebuffer->scaled(this->size(),Qt::KeepAspectRatioByExpanding,Qt::SmoothTransformation);
+    *paintarea = resultmap->scaled(this->size(),Qt::IgnoreAspectRatio,Qt::SmoothTransformation); //Expanding resizes target
     mTaskdone=true;
     updatePixplotOutput();
     update();
 }
+
 //Interval enables calculating fixed-ratio square parts of the whole picture
 calcTask*  RenderArea::setupRenderthread(QSize *mapsize, float intervalStart, float intervalEnd){
     if(mShapeIndex >= getShapeIDbyName("mandel brot") ){
@@ -316,12 +300,12 @@ calcTask*  RenderArea::setupRenderthread(QSize *mapsize, float intervalStart, fl
         calcTask* threadpointer=nullptr;
         if(false){//start thread
             threadpointer = new calcTask(this, startpnt, step, *mapsize, mShapeIndex, mStepCount );
-            QThreadPool::globalInstance()->start(threadpointer );        //start() adds thread to queue, starts while running
+            //QThreadPool::globalInstance()->start(threadpointer );        //start() adds thread to queue, starts while running
         }else{//for DEBUG:
             QPainter *dspaint = new QPainter(dsizebuffer);
             calcTask::plotDrawer(dspaint, mShapeIndex, startpnt,step,dsizebuffer->size(),mStepCount );
-            this->calcTaskDone(*dsizebuffer);
             delete dspaint;
+            this->calcTaskDone(dsizebuffer);//called in thread normally
         }
         return threadpointer;
     }
@@ -358,13 +342,32 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
         rAreaPainter.setPen(Qt::black);
 
         //draw paintarea buffer to screen:
-        rAreaPainter.drawPixmap(this->rect(), *paintarea, paintarea->rect() );
+        rAreaPainter.drawPixmap(this->rect(), *paintarea, paintarea->rect() );      //452 x 345
         if(! (this->rect()==paintarea->rect()) )qDebug() << "wrong pixmap size";
     }
     //durchläufe for() interval(256*2)+0+anfang+ende; 515
     //GESAMT DURCHLÄUFE 5, evtl wegen oversampling? -> ohne antialiasing 4
 }
 
+RenderArea::ShapeType RenderArea::setShapeparameteres(unsigned int id, QString name, float preScale, float interval, int steps, float Xoffset, float Yoffset ){
+    ShapeType sdata = {     //Qlist(dynamic array) - vom struct
+         .id=id,
+         .name=name,            //, calculation name;
+         .prescale=preScale,
+         .interval=interval,    //Length; //8, M_PI;
+         .steps=steps,           //Count;
+         .Xoffset=Xoffset,
+         .Yoffset=Yoffset
+    };
+    ShapeList.append(name);
+    return sdata;
+}
+//    default:                                                //wichtig, default sollte immer gemacht werden
+//        mPreScale = 80;
+//        mIntervalLength = M_PI; //2 * M_PI;
+//        mStepCount = 256;
+//        setBackgroundColor(QColorConstants::DarkYellow);
+//        break;
 
 QPointF RenderArea::compute(float x, unsigned int ShapeIndex){
     switch(ShapeIndex){
@@ -604,7 +607,7 @@ void calcTask::run(){
                    tStepsize,
                    tTargetsize,
                    mStepCount);
-    this->parent->calcTaskDone(*thrdmap);
+    this->parent->calcTaskDone(thrdmap);
 }
 
 
