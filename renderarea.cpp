@@ -39,8 +39,9 @@ RenderArea::RenderArea(QWidget *parent) :  QWidget(parent)     //is set with mai
     shapestore.append(setShapeparameteres(10,"tst",30,M_PI,256) );
     //shapestore.append(paramShape(,"",10,M_PI,256) );      //copy me
 
-    paintarea = new QPixmap(this->size() );    //inherits paintdevice
-    dsizebuffer = new QPixmap(paintarea->size()*2 );
+    QSize startsize = QSize(452,345);   //2nd time 452x345, area actual is 464x340
+    paintarea = new QPixmap(startsize );    //inherits paintdevice
+    dsizebuffer = new QPixmap(startsize*2 );
     dsbufferold = new QPixmap();
 
     mMaxThreads = QThread::idealThreadCount();
@@ -82,9 +83,9 @@ void RenderArea::resizeEvent(QResizeEvent *event){
         delete dsbufferold;
         dsbufferold=dsizebuffer;
         //delete dsizebuffer;
-        paintarea = new QPixmap(event->size() );    //2nd time 452x345
+        paintarea = new QPixmap(event->size() );
         dsizebuffer = new QPixmap(paintarea->size()*2 );
-        *dsizebuffer=*dsbufferold;//->scaled(dsizebuffer->size(),Qt::IgnoreAspectRatio,Qt::SmoothTransformation);
+        *dsizebuffer=dsbufferold->scaled(dsizebuffer->size(),Qt::IgnoreAspectRatio,Qt::SmoothTransformation);
         updatePixplotOutput();
     }
     event->accept();
@@ -257,8 +258,7 @@ unsigned int RenderArea::getShapeIDbyName(QString name){
 }
 
 void RenderArea::calcTaskDone(QPixmap *resultmap){
-    //*dsizebuffer = resultmap;
-    //*paintarea = dsizebuffer->copy(trect );
+    //*paintarea = resultmap->copy();
     *paintarea = resultmap->scaled(this->size(),Qt::IgnoreAspectRatio,Qt::SmoothTransformation); //Expanding resizes target
     mTaskdone=true;
     updatePixplotOutput();
@@ -342,7 +342,7 @@ void RenderArea::paintEvent(QPaintEvent *event)     //wird von Qt aufgerufen wen
         rAreaPainter.setPen(Qt::black);
 
         //draw paintarea buffer to screen:
-        rAreaPainter.drawPixmap(this->rect(), *paintarea, paintarea->rect() );      //452 x 345
+        rAreaPainter.drawPixmap(this->rect(), *paintarea, paintarea->rect() );
         if(! (this->rect()==paintarea->rect()) )qDebug() << "wrong pixmap size";
     }
     //durchläufe for() interval(256*2)+0+anfang+ende; 515
@@ -479,9 +479,6 @@ void RenderArea::lineDrawer(float step, float tIntervLength, float tScale, QPoin
         fprevPixel = fpoint;
     }//X-loop
 }
-
-
-
 
 
 
