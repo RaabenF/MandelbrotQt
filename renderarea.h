@@ -167,8 +167,8 @@ private:
 
     void lineDrawer(float step, float tIntervLength, float scale, QPointF center, QPainter &painter);
     void updatePixplotOutput();
-    void calcTaskDone(QImage *resultmap);
-    //void calcTaskDone(QPixmap *resultmap);
+    void calcTaskDone(QPixmap *resultmap);
+    void calcTaskDone(QImage *resultimage);
 
     void startThreads(QSize mapsize);
     calcTask* setupRenderthread(QSize *mapsize, float intervalStart, float intervalEnd);

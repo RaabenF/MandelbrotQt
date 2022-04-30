@@ -171,7 +171,7 @@ void RenderArea::updatePixplotOutput(){
         *paintarea = dsizebuffer->copy(trect );
         //*paintarea = dsizebuffer->scaled(this->size(),Qt::IgnoreAspectRatio,Qt::SmoothTransformation);
     }else{
-        *paintarea = dsizebuffer->scaled(this->size(),Qt::IgnoreAspectRatio,Qt::SmoothTransformation); //Expanding resizes target
+        //*paintarea = dsizebuffer->scaled(this->size(),Qt::IgnoreAspectRatio,Qt::SmoothTransformation); //Expanding resizes target
     }
 }
 
@@ -258,11 +258,14 @@ unsigned int RenderArea::getShapeIDbyName(QString name){
     return 0;   //else return standartvalue
 }
 
-void RenderArea::calcTaskDone(QImage *resultImage){
+void RenderArea::calcTaskDone(QImage *resultimage){
+       QPixmap tmap;
+       tmap.convertFromImage(*resultimage,Qt::AutoColor);
+    RenderArea::calcTaskDone(&tmap);
+}
+void RenderArea::calcTaskDone(QPixmap *resultmap){
     //*paintarea = resultmap->copy();
-    QPixmap tmap;
-    tmap.convertFromImage(*resultImage,Qt::AutoColor);
-    *paintarea =  tmap.scaled(paintarea->size(),Qt::IgnoreAspectRatio,Qt::SmoothTransformation); //Expanding resizes target
+    *paintarea = resultmap->scaled(this->size(),Qt::IgnoreAspectRatio,Qt::SmoothTransformation); //Expanding resizes target
     mTaskdone=true;
     updatePixplotOutput();
     update();
@@ -301,15 +304,16 @@ calcTask*  RenderArea::setupRenderthread(QSize *mapsize, float intervalStart, fl
         QPointF startpnt = QPointF(xStartOffset - xInterval/2 /tScale,
                                      yStartOffset - yInterval/2 /tScale);
         calcTask* threadpointer=nullptr;
-        if(false){//start thread
+        if(true){//start thread
             threadpointer = new calcTask(this, startpnt, step, *mapsize, mShapeIndex, mStepCount );
             QThreadPool::globalInstance()->start(threadpointer );        //start() adds thread to queue, starts while running
         }else{//for DEBUG:
             dsizeimage = new QImage(dsizebuffer->size(),QImage::Format_RGB32);
             QPainter *tpainter = new QPainter(dsizeimage);
             calcTask::plotDrawer(tpainter, mShapeIndex, startpnt,step,dsizebuffer->size(),mStepCount );
-
-            this->calcTaskDone(dsizeimage);//called in thread normally
+               QPixmap tmap;
+               tmap.convertFromImage(*dsizeimage,Qt::AutoColor);
+            this->calcTaskDone(&tmap);//called in thread normally
             delete tpainter;
             delete dsizeimage;
         }
@@ -593,7 +597,8 @@ calcTask::calcTask(RenderArea *parent, QPointF startpnt, QPointF stepsize, QSize
     //mutex.unlock();
     //we need one painter per thread
     image = QImage(targetsize, QImage::Format_RGB32);    //no painter on: Format_Indexed8
-    image.setDevicePixelRatio(1);   //devicePixelRatio
+    image.setDevicePixelRatio(1);   //devicePixelRatio    thrdmap = new QPixmap(targetsize);
+    thrdpainter = new QPainter(&image);//targetmap);
 }
 
 calcTask::~calcTask(){
@@ -606,12 +611,12 @@ calcTask::~calcTask(){
 
 void calcTask::run(){
     qDebug() << "Hello world from thread" << QThread::currentThread();
-//    this->plotDrawer(&image,   //only call
-//                   mShapeIndex,
-//                   tStartpnt,
-//                   tStepsize,
-//                   tTargetsize,
-//                   mStepCount);
+    this->plotDrawer(thrdpainter,   //only call
+                   mShapeIndex,
+                   tStartpnt,
+                   tStepsize,
+                   tTargetsize,
+                   mStepCount);
     this->parent->calcTaskDone(&image);//thrdmap);
 }
 
