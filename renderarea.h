@@ -22,6 +22,7 @@ public:
     void run() override;    //arguments must stay blank for override, therefore parameters are stored as members
     //void setThreadParams(QPointF startpnt, QPointF stepsize, QSize targetsize);
 
+    const double devicePixelRatio = this->devicePixelRatio;
 
 protected:
 
@@ -30,6 +31,7 @@ private:
     QMutex mutex;
 
     QPixmap *thrdmap;
+    QImage image;
     QPainter *thrdpainter;
 
     QPointF tStartpnt;
@@ -133,6 +135,8 @@ private:
     unsigned int mMaxThreads = 1, mMThrdSqrt = 0, mThreads = 0;
     QList<ShapeType> shapestore;     //dynamische Qliste des structs, kann wie c array verwendet werden
     QPixmap *paintarea, *dsizebuffer, *dsbufferold;
+    QImage *dsizeimage;
+
     std::vector<bool> *infm = nullptr;     //pixelmask infinitymap, do Qlist instead?
 
     QColor mBackgroundColor;
@@ -163,8 +167,8 @@ private:
 
     void lineDrawer(float step, float tIntervLength, float scale, QPointF center, QPainter &painter);
     void updatePixplotOutput();
-    void calcTaskDone(QPixmap resultmap);
-    void calcTaskDone(QPixmap *resultmap);
+    void calcTaskDone(QImage *resultmap);
+    //void calcTaskDone(QPixmap *resultmap);
 
     void startThreads(QSize mapsize);
     calcTask* setupRenderthread(QSize *mapsize, float intervalStart, float intervalEnd);
